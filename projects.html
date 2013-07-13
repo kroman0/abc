@@ -5,7 +5,7 @@
 <ul class="nav nav-pills">
     <li ng-repeat="status in statuses(projects)"
         ng-class="{'pull-right': true, prstatus: status, active: status==fstatus}">
-        <a href="#projects_{{status}}" ng-click="set_status(status)" data-toggle="tab">{{status}}</a>
+        <a ng-href="#projects_{{status}}" ng-click="set_status(status)" data-toggle="tab">{{status}}</a>
     </li>
 </ul>
 <div class="tab-content">
@@ -15,7 +15,7 @@
         <ul class="nav nav-list span4 pull-right">
             <li ng-repeat="cid in companies(projects)"
                 ng-class="{active: $first}">
-                <a href="#projects_{{fstatus}}_{{cid}}" ng-click="set_company(cid)" data-toggle="tab">{{companyName(projects,cid)}}</a>
+                <a ng-href="#projects_{{fstatus}}_{{cid}}" ng-click="set_company(cid)" data-toggle="tab">{{companyName(projects,cid)}}</a>
             </li>
         </ul>
         <div class="tab-content span8">
@@ -23,7 +23,7 @@
                  id="projects_{{fstatus}}_{{fcompany}}">
                 <ul class="unstyled">
                     <li ng-repeat="project in projects | filter:{status: fstatus, 'company.id': fcompany}">
-                        <h3><a href="#/projects/{{project.id}}">{{project.name}}</a></h3>
+                        <h3><a ng-href="#/projects/{{project.id}}">{{project.name}}</a></h3>
                     </li>
                 </ul>
             </div>

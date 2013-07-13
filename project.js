@@ -5,6 +5,10 @@ config(function($routeProvider) {
         controller: ProjectsCtrl,
         templateUrl: 'projects.html'
     }).
+    when('/companies', {
+        controller: CompaniesCtrl,
+        templateUrl: 'companies.html'
+    }).
     otherwise({
         redirectTo: '/projects'
     });
@@ -23,6 +27,10 @@ function ProjectsCtrl($scope, Projects) {
     $scope.statuses = function(list){return _.uniq(_.pluck(list, 'status'))};
     $scope.companies = function(list){return _.uniq(_.map(list, function(item){return item.company.id}))};
     $scope.groupByCID = function(list){return _.groupBy(list, function(item){return item.company.id})};
+}
+
+function CompaniesCtrl($scope, Companies) {
+    $scope.companies = Companies.query();
 }
 
 function NavCtrl($scope, Me) {

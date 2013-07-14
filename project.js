@@ -12,10 +12,13 @@ config(function($routeProvider) {
     otherwise({
         redirectTo: '/projects'
     });
+}).run(function($rootScope) {
+    $rootScope.TITLE = '';
 });
 
 
 function ProjectsCtrl($scope, Projects) {
+    angular.element(document).scope().TITLE = 'Projects';
     $scope.projects = Projects.query();
     $scope.fcompany = 0;
     $scope.set_company = function(i) {$scope.fcompany = i};
@@ -37,6 +40,7 @@ function ProjectsCtrl($scope, Projects) {
 }
 
 function CompaniesCtrl($scope, Companies) {
+    angular.element(document).scope().TITLE = 'Companies';
     $scope.companies = Companies.query();
 }
 

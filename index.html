@@ -22,13 +22,13 @@
 </button>
 <a class="brand" href="#">BB</a>
 <ul ng-show="logged(me)" class="nav nav-collapse">
-    <li ng-repeat="(link, title) in navitems"><a href="#/{{ link }}">{{ title }}</a></li>
+    <li ng-repeat="item in navitems"><a href="#/{{ item.id }}">{{ item.title }}</a></li>
 </ul>
 <ul ng-show="logged(me)" class="nav pull-right">
     <li>
         <a href="#me" title="{{ me['user-name'] }}" class="dropdown-toggle" data-toggle="dropdown">{{ me['first-name'] }} {{ me['last-name'] }} <span class="caret"></span></a>
         <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
-            <li ng-repeat="(link, data) in dropdownitems"><a href="#/{{ link }}"><i class="icon-{{ data.icon }}"></i> {{ data.title }}</a></li>
+            <li ng-repeat="item in dropdownitems"><a href="#/{{ item.id }}"><i class="icon-{{ item.icon }}"></i> {{ item.title }}</a></li>
             <li class="divider"></li>
             <li><a href="/logout"><i class="icon-eject"></i> Logout</a></li>
         </ul>

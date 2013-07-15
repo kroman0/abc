@@ -12,14 +12,16 @@ config(function($routeProvider) {
     otherwise({
         redirectTo: '/projects'
     });
-}).run(function($rootScope) {
+}).run(function($rootScope, Me, Projects, Companies) {
     $rootScope.TITLE = '';
+    $rootScope.me = Me.get();
+    $rootScope.projects = Projects.query();
+    $rootScope.companies = Companies.query();
 });
 
 
-function ProjectsCtrl($scope, Projects) {
+function ProjectsCtrl($scope) {
     $scope.$root.TITLE = 'Projects';
-    $scope.projects = Projects.query();
     $scope.fcompany = 0;
     $scope.set_company = function(i) {$scope.fcompany = i};
     $scope.fstatus = 'active';
@@ -39,13 +41,11 @@ function ProjectsCtrl($scope, Projects) {
     };
 }
 
-function CompaniesCtrl($scope, Companies) {
+function CompaniesCtrl($scope) {
     $scope.$root.TITLE = 'Companies';
-    $scope.companies = Companies.query();
 }
 
-function NavCtrl($scope, Me) {
-    $scope.me = Me.get();
+function NavCtrl($scope) {
     $scope.logged = function(me) {return _.isFinite(me.id)};
     $scope.navitems = [
         {id: 'projects', title: 'Projects'},

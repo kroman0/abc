@@ -9,14 +9,19 @@ config(function($routeProvider) {
         controller: CompaniesCtrl,
         templateUrl: 'companies.html'
     }).
+    when('/todos', {
+        controller: TodosCtrl,
+        templateUrl: 'todos.html'
+    }).
     otherwise({
         redirectTo: '/projects'
     });
-}).run(function($rootScope, Me, Projects, Companies) {
+}).run(function($rootScope, Me, Projects, Companies, People) {
     $rootScope.TITLE = '';
     $rootScope.me = Me.get();
     $rootScope.projects = Projects.query();
     $rootScope.companies = Companies.query();
+    $rootScope.people = People.query();
 });
 
 
@@ -43,6 +48,41 @@ function ProjectsCtrl($scope) {
 
 function CompaniesCtrl($scope) {
     $scope.$root.TITLE = 'Companies';
+}
+
+function TodosCtrl($scope, Todos) {
+    $scope.$root.TITLE = 'Todos';
+    $scope.todos = Todos.query();
+    $scope.party = _.first(_.filter($scope.people, function(i){return i.id==$scope.$root.me.id}));
+    $scope.projectids = function(list) {
+        return _.uniq(_.pluck(list, 'project-id'));
+    };
+    $scope.title = function(party) {
+        var tt = 'To-dos';
+        if (party) {
+            tt = party['first-name']+' '+party['last-name'] + "'s to-dos";
+        }
+        if (party && party.id == $scope.$root.me.id) {
+            tt = 'My to-dos';
+        }
+        if (!party) {
+            tt = 'Unassigned to-dos';
+        }
+        $scope.$root.TITLE = tt;
+        return tt;
+    };
+    $scope.description = function(party) {
+        if (party && party.id == $scope.$root.me.id) {
+            return 'My';
+        }
+        if (party) {
+            return party['first-name']+' '+party['last-name']+"'s";
+        }
+        if (!party) {
+            return 'Unassigned';
+        }
+        return 'All';
+    };
 }
 
 function NavCtrl($scope) {

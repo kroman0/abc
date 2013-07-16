@@ -10,12 +10,12 @@
     <h3>{{ description(party) }} to-do items across all projects</h3>
 </div>
 <dl ng-show="(todos | filter:{'project-id':pr.id}).length" ng-repeat="pr in projects">
-    <dt><a href="#projects/{{ pr.id }}/todo_lists">{{ pr.name }}</a></dt>
+    <dt><a ng-href="#/projects/{{ pr.id }}/todo_lists">{{ pr.name }}</a></dt>
     <dd>
     <dl ng-repeat="list in todos | filter:{'project-id':pr.id}">
         <dt>
             <a ng-class="{muted: list.completed}"
-               href="#projects/{{ pr.id }}/todo_lists/{{ list.id }}">{{ list.name }}</a>
+               ng-href="#/projects/{{ pr.id }}/todo_lists/{{ list.id }}">{{ list.name }}</a>
             <small>{{ list.description }}</small>
         </dt>
         <dd>
@@ -23,8 +23,8 @@
         <dd ng-repeat="item in list['todo-items']">
             <i ng-show="item.completed" class="todo-lists icon-completed" data-todolist-id="{{ list.id }}" data-todoitem-id="{{ item.id }}"></i>
             <i ng-hide="item.completed" class="todo-lists icon-uncompleted" data-todolist-id="{{ list.id }}" data-todoitem-id="{{ item.id }}"></i>
-            <a ng-show="list.tracked" href="#projects/{{ pr.id }}/time_entries/todo_items/{{ item.id }}"><i class="icon-time"></i></a>
-            <a href="#projects/{{ pr.id }}/todo_lists/{{ list.id }}/{{ item.id }}">{{ item.content }}</a>
+            <a ng-show="list.tracked" ng-href="#/projects/{{ pr.id }}/time_entries/todo_items/{{ item.id }}"><i class="icon-time"></i></a>
+            <a ng-href="#/projects/{{ pr.id }}/todo_lists/{{ list.id }}/{{ item.id }}">{{ item.content }}</a>
         </dd>
         </dl>
         </dd>

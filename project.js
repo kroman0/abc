@@ -13,6 +13,10 @@ config(function($routeProvider) {
         controller: TodosCtrl,
         templateUrl: 'todos.html'
     }).
+    when('/time_report', {
+        controller: TimeReportCtrl,
+        templateUrl: 'time-report.html'
+    }).
     otherwise({
         redirectTo: '/projects'
     });
@@ -82,6 +86,18 @@ function TodosCtrl($scope, Todos) {
             return 'Unassigned';
         }
         return 'All';
+    };
+}
+
+function TimeReportCtrl($scope, TimeReport) {
+    $scope.$root.TITLE = 'Time report';
+    $scope.timereport = TimeReport.query();
+    $scope.filter = {};
+    $scope.times = function(list, id) {
+        return _.reduce(_.map(_.where(list, {"project-id":id}),function(i){return i.hours;}),function(memo, num) { return memo + num; }, 0);
+    };
+    $scope.projectids = function(list) {
+        return _.uniq(_.pluck(list, 'project-id'));
     };
 }
 

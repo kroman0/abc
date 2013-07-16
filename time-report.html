@@ -1,0 +1,80 @@
+<div class="page-header">
+    <h1>Time report</h1>
+</div>
+<div id="time_report" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="makereportlabel" aria-hidden="true">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+<h3 id="makereportlabel">Make report</h3>
+</div>
+<form id="makereport">
+    <div class="modal-body">
+    <div class="input-prepend">
+        <span class="add-on">From</span>
+        <input ng-model="filter.from" data-provide="datepicker" data-date-autoclose="true" data-date-format="yyyymmdd" type="text" class="input-small" name="from" placeholder="YYYYMMDD">
+    </div>
+    <br />
+    <div class="input-prepend">
+        <span class="add-on">To</span>
+        <input ng-model="filter.to" data-provide="datepicker" data-date-autoclose="true" data-date-format="yyyymmdd" type="text" class="input-small" name="to" placeholder="YYYYMMDD">
+    </div>
+    <br />
+    <div class="input-prepend">
+        <span class="add-on">For</span>
+        <select name="subject_id" ng-model="filter.subject" class="input-medium" ng-options="p['first-name']+' '+p['last-name'] for p in people">
+            <option value="">All</option>
+        </select>
+    </div>
+    <br />
+    <div class="input-prepend">
+        <span class="add-on">Project</span>
+        <select name="filter_project_id" ng-model="filter.project" class="input-medium" ng-options="p.name for p in projects">
+            <option value="">All</option>
+        </select>
+    </div>
+    <br />
+    <div class="input-prepend">
+        <span class="add-on">Company</span>
+        <select name="filter_company_id" ng-model="filter.company" class="input-medium" ng-options="p.name for p in companies">
+            <option value="">All</option>
+        </select>
+    </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        <button id="getreport" type="submit" data-dismiss="modal" class="btn btn-primary">Report</button>
+    </div>
+</form>
+</div>
+<a href="#time_report" role="button" class="btn btn-primary" data-toggle="modal">Report</a>
+<table class="table table-hover table-condensed table-bordered">
+    <thead>
+        <tr>
+            <th>date</th><th>hours</th><th data-sort="person-id">person</th><th>description</th><th data-sort="id">&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody ng-repeat="pr in projects" ng-show="times(timereport, pr.id)">
+        <tr class="info">
+            <td>
+                <a href="#/projects/{{ pr.id }}/time_entries">{{ pr.name }}</a>
+            </td>
+            <td>
+                {{ times(timereport, pr.id) }}
+            </td>
+            <td colspan="3">&nbsp;</td>
+        </tr>
+        <tr ng-repeat="item in timereport | filter:{'project-id':pr.id}" ng-class="{warning: item.hours>2}">
+            <td>{{ item.date }}</td>
+            <td>{{ item.hours }}</td>
+            <td><a title="{{ item['person-name'] }}" href="#people/{{ item['person-id'] }}"><i class="icon-user"></i>{{ item['person-name'] }}</a></td>
+            <td>
+                <a ng-show="item['todo-item-id']" title="Todo time" href="#projects/{{ item['project-id'] }}/time_entries/todo_items/{{ item['todo-item-id'] }}"><i class="icon-file"></i></a>
+                <a ng-hide="item['todo-item-id']" title="Project time" href="#projects/{{ item['project-id'] }}/time_entries"><i class="icon-folder-close"></i></a>
+                {{ item.description }}
+            </td>
+            <td>
+                <button class="edit" title="Edit"><i class="icon-edit"></i></button>
+                <button class="remove" title="Remove"><i class="icon-trash"></i></button>
+            </td>
+        </tr>
+    </tbody>
+</table>

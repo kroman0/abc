@@ -11,6 +11,10 @@ factory('Todos', function($resource) {
     var Todos = $resource('api/projects.xml');
     return Todos;
 }).
+factory('TimeReport', function($resource) {
+    var TimeReport = $resource('api/projects.xml');
+    return TimeReport;
+}).
 factory('Companies', function($resource) {
     var Companies = $resource('api/companies.xml');
     return Companies;

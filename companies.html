@@ -1,9 +1,9 @@
 <div class="page-header">
     <h1>Companies</h1>
 </div>
-<dl ng-repeat="item in companies">
-    <dt><h3><a ng-href="#/companies/{{ item.id }}">{{ item.name }}</a></h3></dt>
-    <dd class="row-fluid thumbnail">
+<dl>
+    <dt ng-repeat-start="item in companies"><h3><a ng-href="#/companies/{{ item.id }}">{{ item.name }}</a></h3></dt>
+    <dd ng-repeat-end class="row-fluid thumbnail">
         <div class="span4">
             <a ng-show="item['web-address']" ng-href="{{ item['web-address'] }}"><b>{{ item['web-address'] }}</b></a><br />
             Time zone: {{ item['time-zone-id'] }}<br />

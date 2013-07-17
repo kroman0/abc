@@ -1,4 +1,4 @@
-angular.module('project', ['resources']).
+angular.module('project', ['ngRoute', 'resources']).
 config(function($routeProvider) {
     $routeProvider.
     when('/projects', {
@@ -31,10 +31,8 @@ config(function($routeProvider) {
 
 function ProjectsCtrl($scope) {
     $scope.$root.TITLE = 'Projects';
-    $scope.fcompany = 0;
-    $scope.set_company = function(i) {$scope.fcompany = i};
-    $scope.fstatus = 'active';
-    $scope.set_status = function(i) {$scope.fstatus = i};
+    $scope.set_company = function(i) {$scope.$root.fcompany = i};
+    $scope.set_status = function(i) {$scope.$root.fstatus = i};
     $scope.companyName = function(list, id) {
         return _.first(_.filter(list, function(item) {
             return item.company.id == id;
@@ -48,6 +46,10 @@ function ProjectsCtrl($scope) {
             return item.company.id;
         }));
     };
+//     $scope.$root.fstatus = _.first(_.pluck($scope.projects, 'status'));
+//     $scope.$root.fcompany = _.first(_.map($scope.projects, function(item) {
+//             return item.company.id;
+//         }));
 }
 
 function CompaniesCtrl($scope) {

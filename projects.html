@@ -1,12 +1,34 @@
 <div class="page-header">
     <h1>Projects</h1>
 </div>
-<select ng-model="fstatus" ng-options="status for status in statuses(projects)"></select>
-<select ng-model="fcompany" ng-options="companyName(projects,cid) for cid in companies(projects)"></select>
-<ul class="unstyled">
-    <li ng-repeat="project in projects | filter:{status: fstatus, 'company.id': fcompany}">
-        <h3><a ng-href="#/projects/{{project.id}}">{{project.name}}</a></h3>
+<div class="tabbable">
+<ul class="nav nav-pills">
+    <li ng-repeat="status in statuses(projects)"
+        ng-class="{'pull-right': true, prstatus: status, active: status==fstatus}">
+        <a ng-href="#projects_{{status}}" ng-click="set_status(status)" data-toggle="tab">{{status}}</a>
     </li>
 </ul>
+<div class="tab-content">
+    <div class="tab-pane active"
+         id="projects_{{fstatus}}">
+        <div class="tabbable row-fluid">
+        <ul class="nav nav-list span4 pull-right">
+            <li ng-repeat="cid in companies(projects)"
+                ng-class="{active: fcompany==cid}">
+                <a href="#projects_{{fstatus}}_{{cid}}" ng-click="set_company(cid)" data-toggle="tab">{{companyName(projects,cid)}}</a>
+            </li>
+        </ul>
+        <div class="tab-content span8">
+            <div class="tab-pane active"
+                 id="projects_{{fstatus}}_{{fcompany}}">
+                <ul class="unstyled">
+                    <li ng-repeat="project in projects | filter:{status: fstatus, 'company.id': fcompany}">
+                        <h3><a ng-href="#/projects/{{project.id}}">{{project.name}}</a></h3>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        </div>
+    </div>
 </div>
 </div>

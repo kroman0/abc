@@ -52,8 +52,8 @@
             <th>date</th><th>hours</th><th data-sort="person-id">person</th><th>description</th><th data-sort="id">&nbsp;</th>
         </tr>
     </thead>
-    <tbody ng-repeat="pr in projects" ng-show="times(timereport, pr.id)">
-        <tr class="info">
+    <tbody>
+        <tr ng-repeat-start="pr in projects" ng-show="times(timereport, pr.id)" class="info">
             <td>
                 <a href="#/projects/{{ pr.id }}/time_entries">{{ pr.name }}</a>
             </td>
@@ -62,7 +62,7 @@
             </td>
             <td colspan="3">&nbsp;</td>
         </tr>
-        <tr ng-repeat="item in timereport | filter:{'project-id':pr.id}" ng-class="{warning: item.hours>2}">
+        <tr ng-repeat-end ng-repeat="item in timereport | filter:{'project-id':pr.id}" ng-class="{warning: item.hours>2}">
             <td>{{ item.date }}</td>
             <td>{{ item.hours }}</td>
             <td><a title="{{ item['person-name'] }}" href="#people/{{ item['person-id'] }}"><i class="icon-user"></i>{{ item['person-name'] }}</a></td>

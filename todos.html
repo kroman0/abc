@@ -9,16 +9,18 @@
     </div>
     <h3>{{ description(party) }} to-do items across all projects</h3>
 </div>
-<dl ng-show="(todos | filter:{'project-id':pr.id}).length" ng-repeat="pr in projects">
-    <dt><a ng-href="#/projects/{{ pr.id }}/todo_lists">{{ pr.name }}</a></dt>
-    <dd>
-    <dl ng-repeat="list in todos | filter:{'project-id':pr.id}">
-        <dt>
+<dl>
+    <dt ng-show="(todos | filter:{'project-id':pr.id}).length" ng-repeat-start="pr in projects">
+        <a ng-href="#/projects/{{ pr.id }}/todo_lists">{{ pr.name }}</a>
+    </dt>
+    <dd ng-repeat-end ng-show="(todos | filter:{'project-id':pr.id}).length">
+    <dl>
+        <dt ng-repeat-start="list in todos | filter:{'project-id':pr.id}">
             <a ng-class="{muted: list.completed}"
                ng-href="#/projects/{{ pr.id }}/todo_lists/{{ list.id }}">{{ list.name }}</a>
             <small>{{ list.description }}</small>
         </dt>
-        <dd>
+        <dd ng-repeat-end ng-show="list['todo-items'].length">
         <dl>
         <dd ng-repeat="item in list['todo-items']">
             <i ng-show="item.completed" class="todo-lists icon-completed" data-todolist-id="{{ list.id }}" data-todoitem-id="{{ item.id }}"></i>

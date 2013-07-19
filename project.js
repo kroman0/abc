@@ -5,6 +5,10 @@ config(function($routeProvider) {
         controller: ProjectsCtrl,
         templateUrl: 'projects.html'
     }).
+    when('/projects-:filter', {
+        controller: ProjectsCtrl,
+        templateUrl: 'projects.html'
+    }).
     when('/companies', {
         controller: CompaniesCtrl,
         templateUrl: 'companies.html'
@@ -16,6 +20,14 @@ config(function($routeProvider) {
     when('/time_report', {
         controller: TimeReportCtrl,
         templateUrl: 'time-report.html'
+    }).
+    when('/people', {
+        controller: PeopleCtrl,
+        templateUrl: 'people.html'
+    }).
+    when('/people_c:fcompany', {
+        controller: PeopleCtrl,
+        templateUrl: 'people.html'
     }).
     otherwise({
         redirectTo: '/projects'
@@ -29,10 +41,12 @@ config(function($routeProvider) {
 });
 
 
-function ProjectsCtrl($scope) {
+function ProjectsCtrl($scope, $routeParams) {
+    var filter = $routeParams.filter,
+        pfilter = filter && filter.split('-');
     $scope.$root.TITLE = 'Projects';
-    $scope.set_company = function(i) {$scope.$root.fcompany = i};
-    $scope.set_status = function(i) {$scope.$root.fstatus = i};
+    $scope.fcompany = pfilter ? pfilter[1] : $scope.projects[0].company.id;
+    $scope.fstatus = pfilter ? pfilter[0] : $scope.projects[0].status;
     $scope.companyName = function(list, id) {
         return _.first(_.filter(list, function(item) {
             return item.company.id == id;
@@ -46,14 +60,15 @@ function ProjectsCtrl($scope) {
             return item.company.id;
         }));
     };
-//     $scope.$root.fstatus = _.first(_.pluck($scope.projects, 'status'));
-//     $scope.$root.fcompany = _.first(_.map($scope.projects, function(item) {
-//             return item.company.id;
-//         }));
 }
 
 function CompaniesCtrl($scope) {
     $scope.$root.TITLE = 'Companies';
+}
+
+function PeopleCtrl($scope, $routeParams) {
+    $scope.$root.TITLE = 'People';
+    $scope.fcompany = $routeParams.fcompany ? $routeParams.fcompany : $scope.people[0]['company-id']
 }
 
 function TodosCtrl($scope, Todos) {

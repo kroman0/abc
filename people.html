@@ -1,0 +1,31 @@
+<div class="page-header">
+    <h1>People</h1>
+</div>
+<div class="tabbable tabs-left row-fluid">
+<ul class="nav nav-tabs span3">
+    <li ng-repeat="item in companies" ng-class="{active: fcompany==item.id}"><a href="#people_c{{ item.id }}" data-toggle="tab">{{ item.name }}</a></li>
+</ul>
+<div class="tab-content span8">
+    <div class="tab-pane fade in active" id="people_{{fcompany}}">
+        <div ng-hide="(people | filter:{'company.id': fcompany}).length" class="alert alert-info">No people in company...</div>
+        <ul class="media-list">
+<li ng-repeat="item in people | filter:{'company.id': fcompany}" class="media well well-small">
+    <a class="pull-right" href="#/people/{{ item.id }}" title="{{ me['first-name'] }} {{ me['last-name'] }}"><img class="media-object img-polaroid" ng-src="{{ item['avatar-url'] }}" alt="{{ me['first-name'] }} {{ me['last-name'] }}"></a>
+    <div class="media-body">
+        <h4 class="media-heading">
+            <a href="#/people/{{ item.id }}" title="{{ me['first-name'] }} {{ me['last-name'] }}">{{ me['first-name'] }} {{ me['last-name'] }}</a>
+            <small ng-show="item['title']">{{ item['title'] }}</small>
+        </h4>
+        <a href="mailto:{{ item['email-address'] }}"><b>{{ item['email-address'] }}</b></a><br />
+        <a ng-show="item['im-service']=='Skype'" href="skype:{{ item['im-handle'] }}?call" title="Skype call to {{ me['first-name'] }} {{ me['last-name'] }}">{{ item['im-handle'] }}</a><br />
+        Office phone: {{ item['phone-number-office'] }}<br />
+        Mobile phone: {{ item['phone-number-mobile'] }}<br />
+        Home phone: {{ item['phone-number-home'] }}<br />
+        Fax phone: {{ item['phone-number-fax'] }}<br />
+        Time zone: {{ item['time-zone-name'] }}
+    </div>
+</li>
+        </ul>
+    </div>
+</div>
+</div>

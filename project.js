@@ -113,9 +113,6 @@ function TimeReportCtrl($scope, TimeReport) {
     $scope.times = function(list, id) {
         return _.reduce(_.map(_.where(list, {"project-id":id}),function(i){return i.hours;}),function(memo, num) { return memo + num; }, 0);
     };
-    $scope.projectids = function(list) {
-        return _.uniq(_.pluck(list, 'project-id'));
-    };
 }
 
 function NavCtrl($scope) {

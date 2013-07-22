@@ -13,6 +13,10 @@ config(function($routeProvider) {
         controller: CompaniesCtrl,
         templateUrl: 'companies.html'
     }).
+    when('/companies/:id', {
+        controller: CompanyCtrl,
+        templateUrl: 'company.html'
+    }).
     when('/todos', {
         controller: TodosCtrl,
         templateUrl: 'todos.html'
@@ -64,6 +68,13 @@ function ProjectsCtrl($scope, $routeParams) {
 
 function CompaniesCtrl($scope) {
     $scope.$root.TITLE = 'Companies';
+}
+
+function CompanyCtrl($scope, $routeParams) {
+    var id = $scope.cid = parseInt($routeParams.id, 10),
+        fcompany = _.where($scope.companies, {id: id}),
+        company = $scope.model = fcompany ? fcompany[0] : $scope.companies[id];
+    $scope.$root.TITLE = $scope.title = company && company.name;
 }
 
 function PeopleCtrl($scope, $routeParams) {

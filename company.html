@@ -1,0 +1,36 @@
+<div class="page-header">
+    <h1>{{ title }}</h1>
+</div>
+<div class="row">
+    <div class="span4">
+        <h2>Projects</h2>
+        <div ng-hide="(projects | filter:{'company.id': cid}).length" class="alert alert-info">No projects...</div>
+        <ul ng-show="(projects | filter:{'company.id': cid}).length" class="unstyled">
+            <li ng-repeat="item in projects | filter:{'company.id': cid}">
+<i ng-show="item.status=='active'" class="icon-play"></i>
+<i ng-show="item.status=='archived'" class="icon-stop"></i>
+<i ng-show="item.status=='on_hold'" class="icon-pause"></i>
+&nbsp;<a href="#projects/{{ item.id }}">{{ item.name }}</a></li>
+        </ul>
+    </div>
+    <div class="span4">
+        <h2>People</h2>
+        <div ng-hide="(people | filter:{'company-id': cid}).length" class="alert alert-info">No people...</div>
+        <ul ng-show="(people | filter:{'company-id': cid}).length" class="unstyled">
+            <li ng-repeat="item in people | filter:{'company-id': cid}"><a href="#people/{{ item.id }}"><i class="icon-user"></i>{{ item['first-name'] }} {{ item['last-name'] }}</a></li>
+        </ul>
+    </div>
+    <div class="span4">
+        <h2>Contact</h2>
+        <a href="{{ model['web-address'] }}"><b>{{ model['web-address'] }}</b></a><br />
+        Time zone: {{ model['time-zone-id'] }}<br />
+        Locale: {{ model['locale'] }}<br />
+        {{ model['country'] }}<br />
+        {{ model['city'] }} {{ model['zip'] }}<br />
+        {{ model['address-one'] }}<br />
+        {{ model['address-two'] }}<br />
+        State: {{ model['state'] }}<br />
+        Office phone: {{ model['phone-number-office'] }}<br />
+        Fax phone: {{ model['phone-number-fax'] }}
+    </div>
+</div>

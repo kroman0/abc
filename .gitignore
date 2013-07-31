@@ -1,12 +1,14 @@
 *~
 /*.egg
 /*.egg-info
+/api
 /tmp
 /app.ds*
 /test
 /robot_*
 /*.png
 /*.jpg
+/*.html
 /*.xml
 /*.log
 /*.log.?

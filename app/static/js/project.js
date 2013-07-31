@@ -3,35 +3,35 @@ config(function($routeProvider) {
     $routeProvider.
     when('/projects', {
         controller: ProjectsCtrl,
-        templateUrl: 'projects.html'
+        templateUrl: '/static/templates/projects.html'
     }).
     when('/projects-:filter', {
         controller: ProjectsCtrl,
-        templateUrl: 'projects.html'
+        templateUrl: '/static/templates/projects.html'
     }).
     when('/companies', {
         controller: CompaniesCtrl,
-        templateUrl: 'companies.html'
+        templateUrl: '/static/templates/companies.html'
     }).
     when('/companies/:id', {
         controller: CompanyCtrl,
-        templateUrl: 'company.html'
+        templateUrl: '/static/templates/company.html'
     }).
     when('/todos', {
         controller: TodosCtrl,
-        templateUrl: 'todos.html'
+        templateUrl: '/static/templates/todos.html'
     }).
     when('/time_report', {
         controller: TimeReportCtrl,
-        templateUrl: 'time-report.html'
+        templateUrl: '/static/templates/time-report.html'
     }).
     when('/people', {
         controller: PeopleCtrl,
-        templateUrl: 'people.html'
+        templateUrl: '/static/templates/people.html'
     }).
     when('/people_c:fcompany', {
         controller: PeopleCtrl,
-        templateUrl: 'people.html'
+        templateUrl: '/static/templates/people.html'
     }).
     otherwise({
         redirectTo: '/projects'
@@ -49,8 +49,8 @@ function ProjectsCtrl($scope, $routeParams) {
     var filter = $routeParams.filter,
         pfilter = filter && filter.split('-');
     $scope.$root.TITLE = 'Projects';
-    $scope.fcompany = pfilter ? pfilter[1] : $scope.projects[0].company.id;
-    $scope.fstatus = pfilter ? pfilter[0] : $scope.projects[0].status;
+    $scope.fcompany = pfilter ? pfilter[1] : ($scope.projects.length ? $scope.projects[0].company.id : 0);
+    $scope.fstatus = pfilter ? pfilter[0] : ($scope.projects.length ? $scope.projects[0].status : 'active');
     $scope.companyName = function(list, id) {
         return _.first(_.filter(list, function(item) {
             return item.company.id == id;

@@ -1,0 +1,33 @@
+---
+addons:
+  sauce_connect: true
+before_install: 
+- pip install Pillow pycrypto
+- pip install -U setuptools
+python: "2.7"
+script: 
+- make test
+install: 
+- python bootstrap.py
+- bin/buildout -Nq
+after_script: 
+- cat app.log
+language: python
+env: 
+  global: 
+  - secure: |-
+      WhqFUsdm1xPORwGkUfuynUkao/H2SN7enAnlB2hJBUA/kjJqpRZDF5WnZvCI
+      AKdzbF/AEGnYiffgwXsU1RGNbcfivkusL/hwjWEMWRW8s31FkhQPm9KHiNYu
+      JQclspVr9BeueddIQIz7IaCvVqeh0kxbhJRLC7E8kcSFwEoxmlI=
+  - secure: |-
+      Vhp4sqR3s+zY3KYWpHUJYHsQLv29M9J9/uhNw/4kKuOxbYl8SMREqAU4io49
+      FVJSOGxuABu5fJZFTlGAHcE/i8RJLyYU0vHRVGGcYPJhVcwKGuNpUXGGpLAK
+      iLHgSwHA6H2breiTuoanhjXzGlr+mG36Ivoukp/MpV8MLJQyCbg=
+  - ROBOT_BUILD_NUMBER=travis-$TRAVIS_BUILD_NUMBER
+  - ROBOT_REMOTE_URL=http://$SAUCE_USERNAME:$SAUCE_ACCESS_KEY@ondemand.saucelabs.com:80/wd/hub
+  - ROBOT_DESIRED_CAPABILITIES=tunnel-identifier:$TRAVIS_JOB_NUMBER
+  matrix: 
+  - ROBOT_BROWSER=firefox
+  - ROBOT_BROWSER=chrome
+  - PRO_TEST=True ROBOT_BROWSER=firefox
+  - PRO_TEST=True ROBOT_BROWSER=chrome

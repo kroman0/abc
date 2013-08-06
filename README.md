@@ -6,15 +6,15 @@ Basecamp Classic on Angular, Twitter Bootstrap, GAE
 Links
 -----
 
-- [GAE](https://bb-classic.appspot.com/)
-- [RTD](https://bb-classic.readthedocs.org/)
-- [![Build Status](https://travis-ci.org/kroman0/bb-classic.png?branch=b3)](https://travis-ci.org/kroman0/bb-classic)
-- [![Selenium Test Status](https://saucelabs.com/buildstatus/bb-classic)](https://saucelabs.com/u/bb-classic)
+- [GAE](https://ab-classic.appspot.com/)
+- [RTD](https://ab-classic.readthedocs.org/)
+- [![Build Status](https://travis-ci.org/kroman0/ab-classic.png)](https://travis-ci.org/kroman0/ab-classic)
+- [![Selenium Test Status](https://saucelabs.com/buildstatus/ab-classic)](https://saucelabs.com/u/ab-classic)
 
 Installation
 ------------
 
-- Clone repo `git clone git://github.com/kroman0/bb-classic.git`
+- Clone repo `git clone git://github.com/kroman0/abc.git`
 - Bootstrap buildout `python bootstrap.py`
 - Build buildout `bin/buildout`
 - Run application `make`

@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.1.6-e1fe2ac
+ * @license AngularJS v1.1.6-ab59cc6
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -478,6 +478,11 @@ angular.module('ngResource', ['ng']).
                 promise = value.$promise;
 
             if (data) {
+              if ( angular.isArray(data) != !!action.isArray ) {
+                throw ngResourceMinErr('badcfg', 'Error in resource configuration. Expected response' +
+                  ' to contain an {0} but got an {1}', 
+                  action.isArray?'array':'object', angular.isArray(data)?'array':'object');
+              }
               if (action.isArray) {
                 value.length = 0;
                 forEach(data, function(item) {

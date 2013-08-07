@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.1.6-e1fe2ac
+ * @license AngularJS v1.1.6-ab59cc6
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -141,19 +141,19 @@ var /** holds major version number for IE or NaN for real browsers */
  * @return {boolean} Returns true if `obj` is an array or array-like object (NodeList, Arguments, ...)
  */
 function isArrayLike(obj) {
-  if (!obj || (typeof obj.length !== 'number')) return false;
-
-  // We have on object which has length property. Should we treat it as array?
-  if (typeof obj.hasOwnProperty != 'function' &&
-      typeof obj.constructor != 'function') {
-    // This is here for IE8: it is a bogus object treat it as array;
-    return true;
-  } else  {
-    return obj instanceof JQLite ||                      // JQLite
-           (jQuery && obj instanceof jQuery) ||          // jQuery
-           toString.call(obj) !== '[object Object]' ||   // some browser native object
-           typeof obj.callee === 'function';              // arguments (on IE8 looks like regular obj)
+  if (obj == null || isWindow(obj)) {
+    return false;
   }
+  
+  var length = obj.length;
+
+  if (obj.nodeType === 1 && length) {
+    return true;
+  }
+
+  return isArray(obj) || !isFunction(obj) && (
+    length === 0 || typeof length === "number" && length > 0 && (length - 1) in obj
+  );
 }
 
 /**
@@ -1515,7 +1515,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.1.6-e1fe2ac',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.1.6-ab59cc6',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 1,
   dot: 6,
@@ -1841,12 +1841,14 @@ function JQLiteOff(element, type, fn) {
       delete events[type];
     });
   } else {
-    if (isUndefined(fn)) {
-      removeEventListenerFn(element, type, events[type]);
-      delete events[type];
-    } else {
-      arrayRemove(events[type], fn);
-    }
+    forEach(type.split(' '), function(type) {
+      if (isUndefined(fn)) {
+        removeEventListenerFn(element, type, events[type]);
+        delete events[type];
+      } else {
+        arrayRemove(events[type] || [], fn);
+      }
+    });
   }
 }
 
@@ -3203,6 +3205,8 @@ function $AnchorScrollProvider() {
   }];
 }
 
+var $animateMinErr = minErr('$animate');
+
 /**
  * @ngdoc object
  * @name ng.$animateProvider
@@ -3217,7 +3221,7 @@ function $AnchorScrollProvider() {
  */
 var $AnimateProvider = ['$provide', function($provide) {
 
-  this.$$selectors = [];
+  this.$$selectors = {};
 
 
   /**
@@ -3250,17 +3254,47 @@ var $AnimateProvider = ['$provide', function($provide) {
    * @param {function} factory The factory function that will be executed to return the animation object.
    */
   this.register = function(name, factory) {
-    var classes = name.substr(1).split('.');
-    name += '-animation';
-    this.$$selectors.push({
-      selectors : classes,
-      name : name
-    });
-    $provide.factory(name, factory);
+    var key = name + '-animation';
+    if (name && name.charAt(0) != '.') throw $animateMinErr('notcsel',
+        "Expecting class selector starting with '.' got '{0}'.", name);
+    this.$$selectors[name.substr(1)] = key;
+    $provide.factory(key, factory);
   };
 
   this.$get = ['$timeout', function($timeout) {
+
+    /**
+     * @ngdoc object
+     * @name ng.$animate
+     *
+     * @description
+     * The $animate service provides rudimentary DOM manipulation functions to insert, remove, move elements within
+     * the DOM as well as adding and removing classes. This service is the core service used by the ngAnimate $animator
+     * service which provides high-level animation hooks for CSS and JavaScript. 
+     *
+     * $animate is available in the AngularJS core, however, the ngAnimate module must be included to enable full out
+     * animation support. Otherwise, $animate will only perform simple DOM manipulation operations.
+     *
+     * To learn more about enabling animation support, click here to visit the {@link ngAnimate ngAnimate module page}
+     * as well as the {@link ngAnimate.$animate ngAnimate $animate service page}.
+     */
     return {
+
+      /**
+       * @ngdoc function
+       * @name ng.$animate#enter
+       * @methodOf ng.$animate
+       * @function
+       *
+       * @description
+       * Inserts the element into the DOM either after the `after` element or within the `parent` element. Once complete,
+       * the done() callback will be fired (if provided).
+       *
+       * @param {jQuery/jqLite element} element the element which will be inserted into the DOM
+       * @param {jQuery/jqLite element} parent the parent element which will append the element as a child (if the after element is not present)
+       * @param {jQuery/jqLite element} after the sibling element which will append the element after itself
+       * @param {function=} done callback function that will be called after the element has been inserted into the DOM
+       */
       enter : function(element, parent, after, done) {
         var afterNode = after && after[after.length - 1];
         var parentNode = parent && parent[0] || afterNode && afterNode.parentNode;
@@ -3272,17 +3306,57 @@ var $AnimateProvider = ['$provide', function($provide) {
         $timeout(done || noop, 0, false);
       },
 
+      /**
+       * @ngdoc function
+       * @name ng.$animate#leave
+       * @methodOf ng.$animate
+       * @function
+       *
+       * @description
+       * Removes the element from the DOM. Once complete, the done() callback will be fired (if provided).
+       *
+       * @param {jQuery/jqLite element} element the element which will be removed from the DOM
+       * @param {function=} done callback function that will be called after the element has been removed from the DOM
+       */
       leave : function(element, done) {
         element.remove();
         $timeout(done || noop, 0, false);
       },
 
+      /**
+       * @ngdoc function
+       * @name ng.$animate#move
+       * @methodOf ng.$animate
+       * @function
+       *
+       * @description
+       * Moves the position of the provided element within the DOM to be placed either after the `after` element or inside of the `parent` element.
+       * Once complete, the done() callback will be fired (if provided).
+       *
+       * @param {jQuery/jqLite element} element the element which will be moved around within the DOM
+       * @param {jQuery/jqLite element} parent the parent element where the element will be inserted into (if the after element is not present)
+       * @param {jQuery/jqLite element} after the sibling element where the element will be positioned next to
+       * @param {function=} done the callback function (if provided) that will be fired after the element has been moved to it's new position
+       */
       move : function(element, parent, after, done) {
         // Do not remove element before insert. Removing will cause data associated with the
         // element to be dropped. Insert will implicitly do the remove.
         this.enter(element, parent, after, done);
       },
 
+      /**
+       * @ngdoc function
+       * @name ng.$animate#addClass
+       * @methodOf ng.$animate
+       * @function
+       *
+       * @description
+       * Adds the provided className CSS class value to the provided element. Once complete, the done() callback will be fired (if provided).
+       *
+       * @param {jQuery/jqLite element} element the element which will have the className value added to it
+       * @param {string} className the CSS class which will be added to the element
+       * @param {function=} done the callback function (if provided) that will be fired after the className value has been added to the element
+       */
       addClass : function(element, className, done) {
         className = isString(className) ?
                       className :
@@ -3291,6 +3365,19 @@ var $AnimateProvider = ['$provide', function($provide) {
         $timeout(done || noop, 0, false);
       },
 
+      /**
+       * @ngdoc function
+       * @name ng.$animate#removeClass
+       * @methodOf ng.$animate
+       * @function
+       *
+       * @description
+       * Removes the provided className CSS class value from the provided element. Once complete, the done() callback will be fired (if provided).
+       *
+       * @param {jQuery/jqLite element} element the element which will have the className value removed from it
+       * @param {string} className the CSS class which will be removed from the element
+       * @param {function=} done the callback function (if provided) that will be fired after the className value has been removed from the element
+       */
       removeClass : function(element, className, done) {
         className = isString(className) ?
                       className :
@@ -4091,7 +4178,7 @@ function $CompileProvider($provide) {
    * @function
    *
    * @description
-   * Register a new directives with the compiler.
+   * Register a new directive with the compiler.
    *
    * @param {string} name Name of the directive in camel-case. (ie <code>ngBind</code> which will match as
    *                <code>ng-bind</code>).
@@ -4197,9 +4284,9 @@ function $CompileProvider($provide) {
 
   this.$get = [
             '$injector', '$interpolate', '$exceptionHandler', '$http', '$templateCache', '$parse',
-            '$controller', '$rootScope', '$document', '$sce', '$$urlUtils',
+            '$controller', '$rootScope', '$document', '$sce', '$$urlUtils', '$animate',
     function($injector,   $interpolate,   $exceptionHandler,   $http,   $templateCache,   $parse,
-             $controller,   $rootScope,   $document,   $sce,   $$urlUtils) {
+             $controller,   $rootScope,   $document,   $sce,   $$urlUtils, $animate) {
 
     var Attributes = function(element, attr) {
       this.$$element = element;
@@ -4211,6 +4298,42 @@ function $CompileProvider($provide) {
 
 
       /**
+       * @ngdoc function
+       * @name ng.$compile.directive.Attributes#$addClass
+       * @methodOf ng.$compile.directive.Attributes
+       * @function
+       *
+       * @description
+       * Adds the CSS class value specified by the classVal parameter to the element. If animations
+       * are enabled then an animation will be triggered for the class addition.  
+       *
+       * @param {string} classVal The className value that will be added to the element
+       */
+      $addClass : function(classVal) {
+        if(classVal && classVal.length > 0) {
+          $animate.addClass(this.$$element, classVal);
+        }
+      },
+
+      /**
+       * @ngdoc function
+       * @name ng.$compile.directive.Attributes#$removeClass
+       * @methodOf ng.$compile.directive.Attributes
+       * @function
+       *
+       * @description
+       * Removes the CSS class value specified by the classVal parameter from the element. If animations
+       * are enabled then an animation will be triggered for the class removal.  
+       *
+       * @param {string} classVal The className value that will be removed from the element
+       */
+      $removeClass : function(classVal) {
+        if(classVal && classVal.length > 0) {
+          $animate.removeClass(this.$$element, classVal);
+        }
+      },
+
+      /**
        * Set a normalized attribute on the element in a way such that all directives
        * can share the attribute. This function properly handles boolean attributes.
        * @param {string} key Normalized key. (ie ngAttribute)
@@ -4220,54 +4343,64 @@ function $CompileProvider($provide) {
        * @param {string=} attrName Optional none normalized name. Defaults to key.
        */
       $set: function(key, value, writeAttr, attrName) {
-        var booleanKey = getBooleanAttrName(this.$$element[0], key),
-            $$observers = this.$$observers,
-            normalizedVal,
-            nodeName;
-
-        if (booleanKey) {
-          this.$$element.prop(key, value);
-          attrName = booleanKey;
-        }
-
-        this[key] = value;
-
-        // translate normalized key to actual key
-        if (attrName) {
-          this.$attr[key] = attrName;
+        //special case for class attribute addition + removal
+        //so that class changes can tap into the animation
+        //hooks provided by the $animate service
+        if(key == 'class') {
+          value = value || '';
+          var current = this.$$element.attr('class') || '';
+          this.$removeClass(tokenDifference(current, value).join(' '));
+          this.$addClass(tokenDifference(value, current).join(' '));
         } else {
-          attrName = this.$attr[key];
-          if (!attrName) {
-            this.$attr[key] = attrName = snake_case(key, '-');
+          var booleanKey = getBooleanAttrName(this.$$element[0], key),
+              normalizedVal,
+              nodeName;
+
+          if (booleanKey) {
+            this.$$element.prop(key, value);
+            attrName = booleanKey;
           }
-        }
 
-        nodeName = nodeName_(this.$$element);
+          this[key] = value;
 
-        // sanitize a[href] and img[src] values
-        if ((nodeName === 'A' && key === 'href') ||
-            (nodeName === 'IMG' && key === 'src')) {
-          // NOTE: $$urlUtils.resolve() doesn't support IE < 8 so we don't sanitize for that case.
-          if (!msie || msie >= 8 ) {
-            normalizedVal = $$urlUtils.resolve(value);
-            if (normalizedVal !== '') {
-              if ((key === 'href' && !normalizedVal.match(aHrefSanitizationWhitelist)) ||
-                  (key === 'src' && !normalizedVal.match(imgSrcSanitizationWhitelist))) {
-                this[key] = value = 'unsafe:' + normalizedVal;
+          // translate normalized key to actual key
+          if (attrName) {
+            this.$attr[key] = attrName;
+          } else {
+            attrName = this.$attr[key];
+            if (!attrName) {
+              this.$attr[key] = attrName = snake_case(key, '-');
+            }
+          }
+
+          nodeName = nodeName_(this.$$element);
+
+          // sanitize a[href] and img[src] values
+          if ((nodeName === 'A' && key === 'href') ||
+              (nodeName === 'IMG' && key === 'src')) {
+            // NOTE: $$urlUtils.resolve() doesn't support IE < 8 so we don't sanitize for that case.
+            if (!msie || msie >= 8 ) {
+              normalizedVal = $$urlUtils.resolve(value);
+              if (normalizedVal !== '') {
+                if ((key === 'href' && !normalizedVal.match(aHrefSanitizationWhitelist)) ||
+                    (key === 'src' && !normalizedVal.match(imgSrcSanitizationWhitelist))) {
+                  this[key] = value = 'unsafe:' + normalizedVal;
+                }
               }
+            }
+          }
+
+          if (writeAttr !== false) {
+            if (value === null || value === undefined) {
+              this.$$element.removeAttr(attrName);
+            } else {
+              this.$$element.attr(attrName, value);
             }
           }
         }
 
-        if (writeAttr !== false) {
-          if (value === null || value === undefined) {
-            this.$$element.removeAttr(attrName);
-          } else {
-            this.$$element.attr(attrName, value);
-          }
-        }
-
         // fire observers
+        var $$observers = this.$$observers;
         $$observers && forEach($$observers[key], function(fn) {
           try {
             fn(value);
@@ -4275,6 +4408,22 @@ function $CompileProvider($provide) {
             $exceptionHandler(e);
           }
         });
+
+        function tokenDifference(str1, str2) {
+          var values = [],
+              tokens1 = str1.split(/\s+/),
+              tokens2 = str2.split(/\s+/);
+
+          outer:
+          for(var i=0;i<tokens1.length;i++) {
+            var token = tokens1[i];
+            for(var j=0;j<tokens2.length;j++) {
+              if(token == tokens2[j]) continue outer;
+            }
+            values.push(token);
+          }
+          return values;
+        };
       },
 
 
@@ -4884,16 +5033,25 @@ function $CompileProvider($provide) {
               $element: $element,
               $attrs: attrs,
               $transclude: boundTranscludeFn
-            };
+            }, controllerInstance;
 
             controller = directive.controller;
             if (controller == '@') {
               controller = attrs[directive.name];
             }
 
+            controllerInstance = $controller(controller, locals);
             $element.data(
                 '$' + directive.name + 'Controller',
-                $controller(controller, locals));
+                controllerInstance);
+            if (directive.controllerAs) {
+              if (typeof locals.$scope !== 'object') {
+                throw new Error('Can not export controller as "' + identifier + '". ' +
+                    'No scope object provided!');
+              }
+
+              locals.$scope[directive.controllerAs] = controllerInstance;
+            }
           });
         }
 
@@ -7237,17 +7395,24 @@ LocationHashbangInHtml5Url.prototype =
    * @return {string} search
    */
   search: function(search, paramValue) {
-    if (isUndefined(search))
-      return this.$$search;
-
-    if (isDefined(paramValue)) {
-      if (paramValue === null) {
-        delete this.$$search[search];
-      } else {
-        this.$$search[search] = paramValue;
-      }
-    } else {
-      this.$$search = isString(search) ? parseKeyValue(search) : search;
+    switch (arguments.length) {
+      case 0:
+        return this.$$search;
+      case 1:
+        if (isString(search)) {
+          this.$$search = parseKeyValue(search);
+        } else if (isObject(search)) {
+          this.$$search = search;
+        } else {
+          throw $locationMinErr('wpt', 'First parameter of function must be string or an object.');
+        }
+        break;
+      default:
+        if (paramValue == undefined || paramValue == null) {
+          delete this.$$search[search];
+        } else {
+          this.$$search[search] = paramValue;
+        }
     }
 
     this.$$compose();
@@ -7554,16 +7719,6 @@ function $LogProvider(){
 
       /**
        * @ngdoc method
-       * @name ng.$log#warn
-       * @methodOf ng.$log
-       *
-       * @description
-       * Write a warning message
-       */
-      warn: consoleLog('warn'),
-
-      /**
-       * @ngdoc method
        * @name ng.$log#info
        * @methodOf ng.$log
        *
@@ -7571,6 +7726,16 @@ function $LogProvider(){
        * Write an information message
        */
       info: consoleLog('info'),
+
+      /**
+       * @ngdoc method
+       * @name ng.$log#warn
+       * @methodOf ng.$log
+       *
+       * @description
+       * Write a warning message
+       */
+      warn: consoleLog('warn'),
 
       /**
        * @ngdoc method
@@ -8403,6 +8568,17 @@ function setter(obj, path, setValue, fullExp) {
       obj[key] = propertyObj;
     }
     obj = propertyObj;
+    if (obj.then) {
+      if (!("$$v" in obj)) {
+        (function(promise) {
+          promise.then(function(val) { promise.$$v = val; }); }
+        )(obj);
+      }
+      if (obj.$$v === undefined) {
+        obj.$$v = {};
+      }
+      obj = obj.$$v;
+    }
   }
   key = ensureSafeMemberName(element.shift(), fullExp);
   obj[key] = setValue;
@@ -8833,8 +9009,8 @@ function qFactory(nextTick, exceptionHandler) {
             try {
               result.resolve((callback || defaultCallback)(value));
             } catch(e) {
-              exceptionHandler(e);
               result.reject(e);
+              exceptionHandler(e);
             }
           };
 
@@ -8842,8 +9018,8 @@ function qFactory(nextTick, exceptionHandler) {
             try {
               result.resolve((errback || defaultErrback)(reason));
             } catch(e) {
-              exceptionHandler(e);
               result.reject(e);
+              exceptionHandler(e);
             }
           };
 
@@ -10341,7 +10517,6 @@ function $SceDelegateProvider() {
         } else {
           throw $sceMinErr('isecrurl',
               'Blocked loading resource from url not allowed by $sceDelegate policy.  URL: {0}', maybeTrusted.toString());
-          return;
         }
       } else if (type === SCE_CONTEXTS.HTML) {
         return htmlSanitizer(maybeTrusted);
@@ -14570,7 +14745,7 @@ var ngBindHtmlDirective = ['$sce', function($sce) {
 
 function classDirective(name, selector) {
   name = 'ngClass' + name;
-  return ['$animate', function($animate) {
+  return function() {
     return {
       restrict: 'AC',
       link: function(scope, element, attr) {
@@ -14579,8 +14754,7 @@ function classDirective(name, selector) {
         scope.$watch(attr[name], ngClassWatchAction, true);
 
         attr.$observe('class', function(value) {
-          var ngClass = scope.$eval(attr[name]);
-          ngClassWatchAction(ngClass, ngClass);
+          ngClassWatchAction(scope.$eval(attr[name]));
         });
 
 
@@ -14610,18 +14784,12 @@ function classDirective(name, selector) {
 
 
         function removeClass(classVal) {
-          classVal = flattenClasses(classVal);
-          if(classVal && classVal.length > 0) {
-            $animate.removeClass(element, classVal);
-          }
+          attr.$removeClass(flattenClasses(classVal));
         }
 
 
         function addClass(classVal) {
-          classVal = flattenClasses(classVal);
-          if(classVal && classVal.length > 0) {
-            $animate.addClass(element, classVal);
-          }
+          attr.$addClass(flattenClasses(classVal));
         }
 
         function flattenClasses(classVal) {
@@ -14641,7 +14809,7 @@ function classDirective(name, selector) {
         };
       }
     };
-  }];
+  };
 }
 
 /**
@@ -16368,17 +16536,77 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  * @name ng.directive:ngShow
  *
  * @description
- * The `ngShow` and `ngHide` directives show or hide a portion of the DOM tree (HTML)
- * conditionally based on **"truthy"** values evaluated within an {expression}. In other
- * words, if the expression assigned to **ngShow evaluates to a true value** then **the element is set to visible**
- * (via `display:block` in css) and **if false** then **the element is set to hidden** (so display:none).
- * With ngHide this is the reverse whereas true values cause the element itself to become
- * hidden.
+ * The `ngShow` directive shows and hides the given HTML element conditionally based on the expression
+ * provided to the ngShow attribute. The show and hide mechanism is a achieved by removing and adding
+ * the `ng-hide` CSS class onto the element. The `.ng-hide` CSS class is a predefined CSS class present
+ * in AngularJS which sets the display style to none (using an !important flag).
  *
+ * <pre>
+ * <!-- when $scope.myValue is truthy (element is visible) -->
+ * <div ng-show="myValue"></div>
+ *
+ * <!-- when $scope.myValue is falsy (element is hidden) -->
+ * <div ng-show="myValue" class="ng-hide"></div>
+ * </pre>
+ *
+ * When the ngShow expression evaluates to false then the ng-hide CSS class is added to the class attribute
+ * on the element causing it to become hidden. When true, the ng-hide CSS class is removed
+ * from the element causing the element not to appear hidden.
+ *
+ * ## Why is !important used?
+ *
+ * You may be wondering why !important is used for the .ng-hide CSS class. This is because the `.ng-hide` selector
+ * can be easily overridden by heavier selectors. For example, something as simple
+ * as changing the display style on a HTML list item would make hidden elements appear visible.
+ * This also becomes a bigger issue when dealing with CSS frameworks.
+ *
+ * By using !important, the show and hide behavior will work as expected despite any clash between CSS selector
+ * specificity (when !important isn't used with any conflicting styles). If a developer chooses to override the
+ * styling to change how to hide an element then it is just a matter of using !important in their own CSS code.
+ *
+ * ### Overriding .ng-hide
+ *
+ * If you wish to change the hide behavior with ngShow/ngHide then this can be achieved by
+ * restating the styles for the .ng-hide class in CSS:
+ * <pre>
+ * .ng-hide {
+ *   //!annotate CSS Specificity|Not to worry, this will override the AngularJS default...
+ *   display:block!important;
+ *
+ *   //this is just another form of hiding an element
+ *   position:absolute;
+ *   top:-9999px;
+ *   left:-9999px;
+ * }
+ * </pre>
+ *
+ * Just remember to include the important flag so the CSS override will function.
+ *
+ * ## A note about animations with ngShow
+ *
+ * Animations in ngShow/ngHide work with the show and hide events that are triggered when the directive expression
+ * is true and false. This system works similar to the animation system present with ngClass, however, the
+ * only difference is that you must also include the !important flag to override the display property so
+ * that you can perform an animation when the element is hidden during the time of the animation.
+ *
+ * <pre>
+ * //
+ * //a working example can be found at the bottom of this page
+ * //
+ * .my-element.ng-hide-add, .my-element.ng-hide-remove {
+ *   transition:0.5s linear all;
+ *   display:block!important;
+ * }
+ *
+ * .my-element.ng-hide-add { ... }
+ * .my-element.ng-hide-add.ng-hide-add-active { ... }
+ * .my-element.ng-hide-remove { ... }
+ * .my-element.ng-hide-remove.ng-hide-remove-active { ... }
+ * </pre>
  *
  * @animations
- * show - happens after the ngShow expression evaluates to a truthy value and the contents are set to visible
- * hide - happens before the ngShow expression evaluates to a non truthy value and just before the contents are set to hidden
+ * addClass: .ng-hide - happens after the ngShow expression evaluates to a truthy value and the just before contents are set to visible
+ * removeClass: .ng-hide - happens after the ngShow expression evaluates to a non truthy value and just before the contents are set to hidden
  *
  * @element ANY
  * @param {expression} ngShow If the {@link guide/expression expression} is truthy
@@ -16460,16 +16688,77 @@ var ngShowDirective = ['$animate', function($animate) {
  * @name ng.directive:ngHide
  *
  * @description
- * The `ngShow` and `ngHide` directives show or hide a portion of the DOM tree (HTML)
- * conditionally based on **"truthy"** values evaluated within an {expression}. In other
- * words, if the expression assigned to **ngShow evaluates to a true value** then **the element is set to visible**
- * (via `display:block` in css) and **if false** then **the element is set to hidden** (so display:none).
- * With ngHide this is the reverse whereas true values cause the element itself to become
- * hidden.
+ * The `ngHide` directive shows and hides the given HTML element conditionally based on the expression
+ * provided to the ngHide attribute. The show and hide mechanism is a achieved by removing and adding
+ * the `ng-hide` CSS class onto the element. The `.ng-hide` CSS class is a predefined CSS class present
+ * in AngularJS which sets the display style to none (using an !important flag).
+ *
+ * <pre>
+ * <!-- when $scope.myValue is truthy (element is hidden) -->
+ * <div ng-hide="myValue"></div>
+ *
+ * <!-- when $scope.myValue is falsy (element is visible) -->
+ * <div ng-hide="myValue" class="ng-hide"></div>
+ * </pre>
+ *
+ * When the ngHide expression evaluates to true then the .ng-hide CSS class is added to the class attribute
+ * on the element causing it to become hidden. When false, the ng-hide CSS class is removed
+ * from the element causing the element not to appear hidden.
+ *
+ * ## Why is !important used?
+ *
+ * You may be wondering why !important is used for the .ng-hide CSS class. This is because the `.ng-hide` selector
+ * can be easily overridden by heavier selectors. For example, something as simple
+ * as changing the display style on a HTML list item would make hidden elements appear visible.
+ * This also becomes a bigger issue when dealing with CSS frameworks.
+ *
+ * By using !important, the show and hide behavior will work as expected despite any clash between CSS selector
+ * specificity (when !important isn't used with any conflicting styles). If a developer chooses to override the
+ * styling to change how to hide an element then it is just a matter of using !important in their own CSS code.
+ *
+ * ### Overriding .ng-hide
+ *
+ * If you wish to change the hide behavior with ngShow/ngHide then this can be achieved by
+ * restating the styles for the .ng-hide class in CSS:
+ * <pre>
+ * .ng-hide {
+ *   //!annotate CSS Specificity|Not to worry, this will override the AngularJS default...
+ *   display:block!important;
+ *
+ *   //this is just another form of hiding an element
+ *   position:absolute;
+ *   top:-9999px;
+ *   left:-9999px;
+ * }
+ * </pre>
+ *
+ * Just remember to include the important flag so the CSS override will function.
+ *
+ * ## A note about animations with ngHide
+ *
+ * Animations in ngShow/ngHide work with the show and hide events that are triggered when the directive expression
+ * is true and false. This system works similar to the animation system present with ngClass, however, the
+ * only difference is that you must also include the !important flag to override the display property so
+ * that you can perform an animation when the element is hidden during the time of the animation.
+ *
+ * <pre>
+ * //
+ * //a working example can be found at the bottom of this page
+ * //
+ * .my-element.ng-hide-add, .my-element.ng-hide-remove {
+ *   transition:0.5s linear all;
+ *   display:block!important;
+ * }
+ *
+ * .my-element.ng-hide-add { ... }
+ * .my-element.ng-hide-add.ng-hide-add-active { ... }
+ * .my-element.ng-hide-remove { ... }
+ * .my-element.ng-hide-remove.ng-hide-remove-active { ... }
+ * </pre>
  *
  * @animations
- * show - happens after the ngHide expression evaluates to a non truthy value and the contents are set to visible
- * hide - happens after the ngHide expression evaluates to a truthy value and just before the contents are set to hidden
+ * removeClass: .ng-hide - happens after the ngHide expression evaluates to a truthy value and just before the contents are set to hidden
+ * addClass: .ng-hide - happens after the ngHide expression evaluates to a non truthy value and just before the contents are set to visible
  *
  * @element ANY
  * @param {expression} ngHide If the {@link guide/expression expression} is truthy then
@@ -17506,4 +17795,4 @@ var styleDirective = valueFn({
   });
 
 })(window, document);
-angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak{display:none !important;}ng\\:form{display:block;}.ng-hide{display:none;}</style>');
+angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}ng\\:form{display:block;}</style>');

@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.1.6-e4b6a1e
+ * @license AngularJS v1.1.6-3ee744c
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -672,6 +672,8 @@ function copy(source, destination){
         destination = copy(source, []);
       } else if (isDate(source)) {
         destination = new Date(source.getTime());
+      } else if (isRegExp(source)) {
+        destination = new RegExp(source.source);
       } else if (isObject(source)) {
         destination = copy(source, {});
       }
@@ -1108,6 +1110,12 @@ function angularInit(element, bootstrap) {
 function bootstrap(element, modules) {
   var doBootstrap = function() {
     element = jqLite(element);
+
+    if (element.injector()) {
+      var tag = (element[0] === document) ? 'document' : startingTag(element);
+      throw ngMinErr('btstrpd', "App Already Bootstrapped with this Element '{0}'", tag);
+    }
+
     modules = modules || [];
     modules.unshift(['$provide', function($provide) {
       $provide.value('$rootElement', element);
@@ -1515,7 +1523,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.1.6-e4b6a1e',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.1.6-3ee744c',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 1,
   dot: 6,
@@ -1827,8 +1835,8 @@ function JQLiteDealoc(element){
   }
 }
 
-function JQLiteOff(element, type, fn) {
-  if ( arguments.length > 4 ) throw jqLiteMinErr('off_args', 'jqLite#off() does not support the `selector` parameter');
+function JQLiteOff(element, type, fn, unsupported) {
+  if (isDefined(unsupported)) throw jqLiteMinErr('offargs', 'jqLite#off() does not support the `selector` argument');
 
   var events = JQLiteExpandoStore(element, 'events'),
       handle = JQLiteExpandoStore(element, 'handle');
@@ -1964,7 +1972,7 @@ function JQLiteInheritedData(element, name, value) {
   }
 
   while (element.length) {
-    if (value = element.data(name)) return value;
+    if ((value = element.data(name)) !== undefined) return value;
     element = element.parent();
   }
 }
@@ -2266,8 +2274,8 @@ forEach({
 
   dealoc: JQLiteDealoc,
 
-  on: function onFn(element, type, fn, other1){
-    if ( isDefined(other1) ) throw jqLiteMinErr('on_args', 'jqLite#on() does not support the `selector` or `eventData` parameters');
+  on: function onFn(element, type, fn, unsupported){
+    if (isDefined(unsupported)) throw jqLiteMinErr('onargs', 'jqLite#on() does not support the `selector` or `eventData` parameters');
 
     var events = JQLiteExpandoStore(element, 'events'),
         handle = JQLiteExpandoStore(element, 'handle');
@@ -4191,7 +4199,7 @@ function $CompileProvider($provide) {
    *
    * @param {string} name Name of the directive in camel-case. (ie <code>ngBind</code> which will match as
    *                <code>ng-bind</code>).
-   * @param {function} directiveFactory An injectable directive factory function. See {@link guide/directive} for more
+   * @param {function|Array} directiveFactory An injectable directive factory function. See {@link guide/directive} for more
    *                info.
    * @returns {ng.$compileProvider} Self for chaining.
    */
@@ -4314,7 +4322,7 @@ function $CompileProvider($provide) {
        *
        * @description
        * Adds the CSS class value specified by the classVal parameter to the element. If animations
-       * are enabled then an animation will be triggered for the class addition.  
+       * are enabled then an animation will be triggered for the class addition.
        *
        * @param {string} classVal The className value that will be added to the element
        */
@@ -4332,7 +4340,7 @@ function $CompileProvider($provide) {
        *
        * @description
        * Removes the CSS class value specified by the classVal parameter from the element. If animations
-       * are enabled then an animation will be triggered for the class removal.  
+       * are enabled then an animation will be triggered for the class removal.
        *
        * @param {string} classVal The className value that will be removed from the element
        */
@@ -4710,7 +4718,7 @@ function $CompileProvider($provide) {
         var startNode = node;
         do {
           if (!node) {
-            throw $compileMinErr('utrat', "Unterminated attribute, found '{0}' but no matching '{1}' found.", attrStart, attrEnd);
+            throw $compileMinErr('uterdir', "Unterminated attribute, found '{0}' but no matching '{1}' found.", attrStart, attrEnd);
           }
           if (node.nodeType == 1 /** Element **/) {
             if (node.hasAttribute(attrStart)) depth++;
@@ -4801,13 +4809,6 @@ function $CompileProvider($provide) {
 
         directiveName = directive.name;
 
-        if (directiveValue = directive.controller) {
-          controllerDirectives = controllerDirectives || {};
-          assertNoDuplicate("'" + directiveName + "' controller",
-              controllerDirectives[directiveName], directive, $compileNode);
-          controllerDirectives[directiveName] = directive;
-        }
-
         if (directiveValue = directive.transclude) {
           assertNoDuplicate('transclusion', transcludeDirective, directive, $compileNode);
           transcludeDirective = directive;
@@ -4894,6 +4895,13 @@ function $CompileProvider($provide) {
           } catch (e) {
             $exceptionHandler(e, startingTag($compileNode));
           }
+        }
+
+        if (!directive.templateUrl && directive.controller) {
+          controllerDirectives = controllerDirectives || {};
+          assertNoDuplicate("'" + directiveName + "' controller",
+              controllerDirectives[directiveName], directive, $compileNode);
+          controllerDirectives[directiveName] = directive;
         }
 
         if (directive.terminal) {
@@ -4997,7 +5005,7 @@ function $CompileProvider($provide) {
                 parentSet = parentGet.assign || function() {
                   // reset the change, or we will throw this exception on every $digest
                   lastValue = scope[scopeName] = parentGet(parentScope);
-                  throw $compileMinErr('noass', "Expression '{0}' used with directive '{1}' is non-assignable!",
+                  throw $compileMinErr('nonassign', "Expression '{0}' used with directive '{1}' is non-assignable!",
                       attrs[attrName], newIsolateScopeDirective.name);
                 };
                 lastValue = scope[scopeName] = parentGet(parentScope);
@@ -5054,11 +5062,6 @@ function $CompileProvider($provide) {
                 '$' + directive.name + 'Controller',
                 controllerInstance);
             if (directive.controllerAs) {
-              if (typeof locals.$scope !== 'object') {
-                throw new Error('Can not export controller as "' + directive.controllerAs + '". ' +
-                    'No scope object provided!');
-              }
-
               locals.$scope[directive.controllerAs] = controllerInstance;
             }
           });
@@ -5176,7 +5179,7 @@ function $CompileProvider($provide) {
           origAsyncDirective = directives.shift(),
           // The fact that we have to copy and patch the directive seems wrong!
           derivedSyncDirective = extend({}, origAsyncDirective, {
-            controller: null, templateUrl: null, transclude: null, scope: null, replace: null
+            templateUrl: null, transclude: null, scope: null, replace: null
           }),
           templateUrl = (isFunction(origAsyncDirective.templateUrl))
               ? origAsyncDirective.templateUrl($compileNode, tAttrs)
@@ -5310,7 +5313,7 @@ function $CompileProvider($provide) {
 
 
       if (name === "multiple" && nodeName_(node) === "SELECT") {
-        throw $compileMinErr("selmulti", "Binding to the multiple attribute is not supported. Element: {0}",
+        throw $compileMinErr("selmulti", "Binding to the 'multiple' attribute is not supported. Element: {0}",
             startingTag(node));
       }
 
@@ -8872,6 +8875,8 @@ function $ParseProvider() {
  *   This method *returns a new promise* which is resolved or rejected via the return value of the
  *   `successCallback` or `errorCallback`.
  *
+ * - `catch(errorCallback)` – shorthand for `promise.then(null, errorCallback)`
+ *
  * - `always(callback)` – allows you to observe either the fulfillment or rejection of a promise,
  *   but to do so without modifying the final value. This is useful to release resources or do some
  *   clean-up that needs to be done whether the promise was rejected or resolved. See the [full
@@ -8909,25 +8914,25 @@ function $ParseProvider() {
  *   you can treat promises attached to a scope as if they were the resulting values.
  * - Q has many more features than $q, but that comes at a cost of bytes. $q is tiny, but contains
  *   all the important functionality needed for common async tasks.
- * 
+ *
  *  # Testing
- * 
+ *
  *  <pre>
  *    it('should simulate promise', inject(function($q, $rootScope) {
  *      var deferred = $q.defer();
  *      var promise = deferred.promise;
  *      var resolvedValue;
- * 
+ *
  *      promise.then(function(value) { resolvedValue = value; });
  *      expect(resolvedValue).toBeUndefined();
- * 
+ *
  *      // Simulate resolving of promise
  *      deferred.resolve(123);
  *      // Note that the 'then' function does not get called synchronously.
  *      // This is because we want the promise API to always be async, whether or not
  *      // it got called synchronously or asynchronously.
  *      expect(resolvedValue).toBeUndefined();
- * 
+ *
  *      // Propagate promise resolution to 'then' functions using $apply().
  *      $rootScope.$apply();
  *      expect(resolvedValue).toEqual(123);
@@ -9048,8 +9053,13 @@ function qFactory(nextTick, exceptionHandler) {
 
           return result.promise;
         },
+
+        "catch": function(callback) {
+          return this.then(null, callback);
+        },
+
         always: function(callback) {
-          
+
           function makePromise(value, resolved) {
             var result = defer();
             if (resolved) {
@@ -9059,14 +9069,14 @@ function qFactory(nextTick, exceptionHandler) {
             }
             return result.promise;
           }
-          
+
           function handleCallback(value, isResolved) {
-            var callbackOutput = null;            
+            var callbackOutput = null;
             try {
               callbackOutput = (callback ||defaultCallback)();
             } catch(e) {
               return makePromise(e, false);
-            }            
+            }
             if (callbackOutput && callbackOutput.then) {
               return callbackOutput.then(function() {
                 return makePromise(value, isResolved);
@@ -9077,7 +9087,7 @@ function qFactory(nextTick, exceptionHandler) {
               return makePromise(value, isResolved);
             }
           }
-          
+
           return this.then(function(value) {
             return handleCallback(value, true);
           }, function(error) {
@@ -10524,7 +10534,7 @@ function $SceDelegateProvider() {
         if (isResourceUrlAllowedByPolicy(maybeTrusted)) {
           return maybeTrusted;
         } else {
-          throw $sceMinErr('isecrurl',
+          throw $sceMinErr('insecurl',
               'Blocked loading resource from url not allowed by $sceDelegate policy.  URL: {0}', maybeTrusted.toString());
         }
       } else if (type === SCE_CONTEXTS.HTML) {
@@ -14084,6 +14094,10 @@ var VALID_CLASS = 'ng-valid',
  * @property {Array.<Function>} $parsers Array of functions to execute, as a pipeline, whenever
        the control reads value from the DOM.  Each function is called, in turn, passing the value
        through to the next. Used to sanitize / convert the value as well as validation.
+       For validation, the parsers should update the validity state using
+       {@link ng.directive:ngModel.NgModelController#$setValidity $setValidity()},
+       and return `undefined` for invalid values.
+
  *
  * @property {Array.<Function>} $formatters Array of functions to execute, as a pipeline, whenever
        the model value changes. Each function is called, in turn, passing the value through to the
@@ -14309,8 +14323,8 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
    * For example {@link ng.directive:input input} or
    * {@link ng.directive:select select} directives call it.
    *
-   * It internally calls all `parsers` and if resulted value is valid, updates the model and
-   * calls all registered change listeners.
+   * It internally calls all `$parsers` (including validators) and updates the `$modelValue` and the actual model path.
+   * Lastly it calls all registered change listeners.
    *
    * @param {string} value Value from the view.
    */
@@ -14376,7 +14390,8 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
  *
  * @description
  * Is a directive that tells Angular to do two-way data binding. It works together with `input`,
- * `select`, `textarea`. You can easily write your own directives to use `ngModel` as well.
+ * `select`, `textarea` and even custom form controls that use {@link ng.directive:ngModel.NgModelController
+ * NgModelController} exposed by this directive.
  *
  * `ngModel` is responsible for:
  *

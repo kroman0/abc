@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.1.6-3ee744c
+ * @license AngularJS v1.1.6-2430347
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1523,7 +1523,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.1.6-3ee744c',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.1.6-2430347',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 1,
   dot: 6,
@@ -8877,11 +8877,15 @@ function $ParseProvider() {
  *
  * - `catch(errorCallback)` – shorthand for `promise.then(null, errorCallback)`
  *
- * - `always(callback)` – allows you to observe either the fulfillment or rejection of a promise,
+ * - `finally(callback)` – allows you to observe either the fulfillment or rejection of a promise,
  *   but to do so without modifying the final value. This is useful to release resources or do some
  *   clean-up that needs to be done whether the promise was rejected or resolved. See the [full
  *   specification](https://github.com/kriskowal/q/wiki/API-Reference#promisefinallycallback) for
  *   more information.
+ *
+ *   Because `finally` is a reserved word in JavaScript and reserved keywords are not supported as
+ *   property names by ES3, you'll need to invoke the method like `promise['finally'](callback)` to
+ *   make your code IE8 compatible.
  *
  * # Chaining promises
  *
@@ -9058,7 +9062,7 @@ function qFactory(nextTick, exceptionHandler) {
           return this.then(null, callback);
         },
 
-        always: function(callback) {
+        "finally": function(callback) {
 
           function makePromise(value, resolved) {
             var result = defer();
@@ -15881,18 +15885,23 @@ var ngIfDirective = ['$animate', function($animate) {
  * @description
  * Emitted every time the ngInclude content is reloaded.
  */
+var NG_INCLUDE_PRIORITY = 500;
 var ngIncludeDirective = ['$http', '$templateCache', '$anchorScroll', '$compile', '$animate', '$sce',
                   function($http,   $templateCache,   $anchorScroll,   $compile,   $animate,   $sce) {
   return {
     restrict: 'ECA',
     terminal: true,
-    transclude: 'element',
-    compile: function(element, attr, transclusion) {
+    priority: NG_INCLUDE_PRIORITY,
+    compile: function(element, attr) {
       var srcExp = attr.ngInclude || attr.src,
           onloadExp = attr.onload || '',
           autoScrollExp = attr.autoscroll;
 
-      return function(scope, $element) {
+      element.html('');
+      var anchor = jqLite(document.createComment(' ngInclude: ' + srcExp + ' '));
+      element.replaceWith(anchor);
+
+      return function(scope) {
         var changeCounter = 0,
             currentScope,
             currentElement;
@@ -15916,23 +15925,21 @@ var ngIncludeDirective = ['$http', '$templateCache', '$anchorScroll', '$compile'
               if (thisChangeId !== changeCounter) return;
               var newScope = scope.$new();
 
-              transclusion(newScope, function(clone) {
-                cleanupLastIncludeContent();
+              cleanupLastIncludeContent();
 
-                currentScope = newScope;
-                currentElement = clone;
+              currentScope = newScope;
+              currentElement = element.clone();
+              currentElement.html(response);
+              $animate.enter(currentElement, null, anchor);
 
-                currentElement.html(response);
-                $animate.enter(currentElement, null, $element);
-                $compile(currentElement.contents())(currentScope);
+              $compile(currentElement, false, NG_INCLUDE_PRIORITY - 1)(currentScope);
 
-                if (isDefined(autoScrollExp) && (!autoScrollExp || scope.$eval(autoScrollExp))) {
-                  $anchorScroll();
-                }
+              if (isDefined(autoScrollExp) && (!autoScrollExp || scope.$eval(autoScrollExp))) {
+                $anchorScroll();
+              }
 
-                currentScope.$emit('$includeContentLoaded');
-                scope.$eval(onloadExp);
-              });
+              currentScope.$emit('$includeContentLoaded');
+              scope.$eval(onloadExp);
             }).error(function() {
               if (thisChangeId === changeCounter) cleanupLastIncludeContent();
             });

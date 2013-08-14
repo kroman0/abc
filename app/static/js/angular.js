@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.1.6-1429a71
+ * @license AngularJS v1.2.0-96bbf72
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1523,11 +1523,11 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.1.6-1429a71',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-96bbf72',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
-  minor: 1,
-  dot: 6,
-  codeName: 'spooky-giraffe'
+  minor: 2,
+  dot: 0,
+  codeName: 'barehand-atomspliting'
 };
 
 
@@ -7843,7 +7843,6 @@ var $parseMinErr = minErr('$parse');
 // We want to prevent this type of access. For the sake of performance, during the lexing phase we disallow any "dotted"
 // access to any member named "constructor".
 //
-// For reflective calls (a[b]) we check that the value of the lookup is not the Function constructor while evaluating
 // For reflective calls (a[b]) we check that the value of the lookup is not the Function constructor while evaluating
 // the expression, which is a stronger but more expensive test. Since reflective calls are expensive anyway, this is not
 // such a big deal compared to static dereferencing.

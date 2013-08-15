@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-96bbf72
+ * @license AngularJS v1.2.0-37123cd
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -35,10 +35,21 @@
 
 function minErr(module) {
   return function () {
-    var prefix = '[' + (module ? module + ':' : '') + arguments[0] + '] ',
+    var code = arguments[0],
+      prefix = '[' + (module ? module + ':' : '') + code + '] ',
       template = arguments[1],
       templateArgs = arguments,
-      message;
+      stringify = function (obj) {
+        if (isFunction(obj)) {
+          return obj.toString().replace(/ \{[\s\S]*$/, '');
+        } else if (isUndefined(obj)) {
+          return 'undefined';
+        } else if (!isString(obj)) {
+          return JSON.stringify(obj);
+        }
+        return obj;
+      },
+      message, i;
 
     message = prefix + template.replace(/\{\d+\}/g, function (match) {
       var index = +match.slice(1, -1), arg;
@@ -56,6 +67,13 @@ function minErr(module) {
       }
       return match;
     });
+
+    message = message + '\nhttp://errors.angularjs.org/' + version.full + '/' +
+      (module ? module + '/' : '') + code;
+    for (i = 2; i < arguments.length; i++) {
+      message = message + (i == 2 ? '?' : '&') + 'p' + (i-2) + '=' +
+        encodeURIComponent(stringify(arguments[i]));
+    }
 
     return new Error(message);
   };
@@ -1523,7 +1541,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-96bbf72',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-37123cd',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -6015,6 +6033,7 @@ function $HttpProvider() {
      *     return function(promise) {
      *       return promise.then(function(response) {
      *         // do something on success
+     *         return response;
      *       }, function(response) {
      *         // do something on error
      *         if (canRecover(response)) {
@@ -6764,23 +6783,32 @@ var $interpolateMinErr = minErr('$interpolate');
  * @description
  *
  * Used for configuring the interpolation markup. Defaults to `{{` and `}}`.
- * 
+ *
  * @example
-   <doc:example>
+   <doc:example module="customInterpolationApp">
      <doc:source>
       <script>
-        var myApp = angular.module('App', [], function($interpolateProvider) {
+        var customInterpolationApp = angular.module('customInterpolationApp', []);
+
+        customInterpolationApp.config(function($interpolateProvider) {
           $interpolateProvider.startSymbol('//');
           $interpolateProvider.endSymbol('//');
         });
-        function Controller($scope) {   
-            $scope.label = "Interpolation Provider Sample";
-        }
+
+
+        customInterpolationApp.controller('DemoController', function DemoController() {
+            this.label = "This bindings is brought you you by // interpolation symbols.";
+        });
       </script>
-      <div ng-app="App" ng-controller="Controller">
-          //label//
+      <div ng-app="App" ng-controller="DemoController as demo">
+          //demo.label//
       </div>
      </doc:source>
+     <doc:scenario>
+       it('should interpolate binding with custom symbols', function() {
+         expect(binding('demo.label')).toBe('This bindings is brought you you by // interpolation symbols.');
+       });
+ </doc:scenario>
    </doc:example>
  */
 function $InterpolateProvider() {
@@ -11317,17 +11345,15 @@ function $TimeoutProvider() {
           deferred.reject(e);
           $exceptionHandler(e);
         }
+        finally {
+          delete deferreds[promise.$$timeoutId];
+        }
 
         if (!skipApply) $rootScope.$apply();
       }, delay);
 
-      cleanup = function() {
-        delete deferreds[promise.$$timeoutId];
-      };
-
       promise.$$timeoutId = timeoutId;
       deferreds[timeoutId] = deferred;
-      promise.then(cleanup, cleanup);
 
       return promise;
     }
@@ -11349,6 +11375,7 @@ function $TimeoutProvider() {
     timeout.cancel = function(promise) {
       if (promise && promise.$$timeoutId in deferreds) {
         deferreds[promise.$$timeoutId].reject('canceled');
+        delete deferreds[promise.$$timeoutId];
         return $browser.defer.cancel(promise.$$timeoutId);
       }
       return false;
@@ -12532,8 +12559,10 @@ function orderByFilter($parse){
       var t1 = typeof v1;
       var t2 = typeof v2;
       if (t1 == t2) {
-        if (t1 == "string") v1 = v1.toLowerCase();
-        if (t1 == "string") v2 = v2.toLowerCase();
+        if (t1 == "string") {
+           v1 = v1.toLowerCase();
+           v2 = v2.toLowerCase();
+        }
         if (v1 === v2) return 0;
         return v1 < v2 ? -1 : 1;
       } else {

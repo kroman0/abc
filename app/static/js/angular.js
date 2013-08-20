@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-d307242
+ * @license AngularJS v1.2.0-b1a43cd
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1541,7 +1541,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-d307242',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-b1a43cd',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -11275,6 +11275,11 @@ function $SnifferProvider() {
           break;
         }
       }
+
+      if(!vendorPrefix) {
+        vendorPrefix = ('WebkitOpacity' in bodyStyle) && 'webkit';
+      }
+
       transitions = !!(('transition' in bodyStyle) || (vendorPrefix + 'Transition' in bodyStyle));
       animations  = !!(('animation' in bodyStyle) || (vendorPrefix + 'Animation' in bodyStyle));
       
@@ -15941,23 +15946,18 @@ var ngIfDirective = ['$animate', function($animate) {
  * @description
  * Emitted every time the ngInclude content is reloaded.
  */
-var NG_INCLUDE_PRIORITY = 500;
 var ngIncludeDirective = ['$http', '$templateCache', '$anchorScroll', '$compile', '$animate', '$sce',
                   function($http,   $templateCache,   $anchorScroll,   $compile,   $animate,   $sce) {
   return {
     restrict: 'ECA',
     terminal: true,
-    priority: NG_INCLUDE_PRIORITY,
-    compile: function(element, attr) {
+    transclude: 'element',
+    compile: function(element, attr, transclusion) {
       var srcExp = attr.ngInclude || attr.src,
           onloadExp = attr.onload || '',
           autoScrollExp = attr.autoscroll;
 
-      element.html('');
-      var anchor = jqLite(document.createComment(' ngInclude: ' + srcExp + ' '));
-      element.replaceWith(anchor);
-
-      return function(scope) {
+      return function(scope, $element) {
         var changeCounter = 0,
             currentScope,
             currentElement;
@@ -15981,21 +15981,23 @@ var ngIncludeDirective = ['$http', '$templateCache', '$anchorScroll', '$compile'
               if (thisChangeId !== changeCounter) return;
               var newScope = scope.$new();
 
-              cleanupLastIncludeContent();
+              transclusion(newScope, function(clone) {
+                cleanupLastIncludeContent();
 
-              currentScope = newScope;
-              currentElement = element.clone();
-              currentElement.html(response);
-              $animate.enter(currentElement, null, anchor);
+                currentScope = newScope;
+                currentElement = clone;
 
-              $compile(currentElement, false, NG_INCLUDE_PRIORITY - 1)(currentScope);
+                currentElement.html(response);
+                $animate.enter(currentElement, null, $element);
+                $compile(currentElement.contents())(currentScope);
 
-              if (isDefined(autoScrollExp) && (!autoScrollExp || scope.$eval(autoScrollExp))) {
-                $anchorScroll();
-              }
+                if (isDefined(autoScrollExp) && (!autoScrollExp || scope.$eval(autoScrollExp))) {
+                  $anchorScroll();
+                }
 
-              currentScope.$emit('$includeContentLoaded');
-              scope.$eval(onloadExp);
+                currentScope.$emit('$includeContentLoaded');
+                scope.$eval(onloadExp);
+              });
             }).error(function() {
               if (thisChangeId === changeCounter) cleanupLastIncludeContent();
             });

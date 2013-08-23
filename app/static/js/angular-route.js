@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-99175f4
+ * @license AngularJS v1.2.0-74ae3ed
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -26,17 +26,11 @@ function inherit(parent, extra) {
  * @name ngRoute
  * @description
  *
- * ngRoute
- * =========
+ * # ngRoute
  *
- * The ngRoute module provides routing and deeplinking services and directives for angular apps.
+ * The `ngRoute` module provides routing and deeplinking services and directives for angular apps.
  *
- * To make use of routing with AngularJS, the `angular-route.js` JavaScript file must be included into your application
- * and the `ngRoute` module must be included as a dependency.
- *
- * <pre>
- * angular.module('App', ['ngRoute']);
- * </pre>
+ * {@installModule route}
  *
  */
 
@@ -51,6 +45,8 @@ var ngRouteModule = angular.module('ngRoute', ['ng']).
  * @description
  *
  * Used for configuring routes. See {@link ngRoute.$route $route} for an example.
+ *
+ * Requires the {@link ngRoute `ngRoute`} module to be installed.
  */
 function $RouteProvider(){
   var routes = {};
@@ -252,13 +248,15 @@ function $RouteProvider(){
      * @property {Array.<Object>} routes Array of all configured routes.
      *
      * @description
-     * Is used for deep-linking URLs to controllers and views (HTML partials).
+     * `$route` is used for deep-linking URLs to controllers and views (HTML partials).
      * It watches `$location.url()` and tries to map the path to an existing route definition.
+     *
+     * Requires the {@link ngRoute `ngRoute`} module to be installed.
      *
      * You can define routes through {@link ngRoute.$routeProvider $routeProvider}'s API.
      *
-     * The `$route` service is typically used in conjunction with {@link ngRoute.directive:ngView ngView}
-     * directive and the {@link ngRoute.$routeParams $routeParams} service.
+     * The `$route` service is typically used in conjunction with the {@link ngRoute.directive:ngView `ngView`}
+     * directive and the {@link ngRoute.$routeParams `$routeParams`} service.
      *
      * @example
        This example shows how changing the URL hash causes the `$route` to match a route against the
@@ -596,9 +594,13 @@ ngRouteModule.provider('$routeParams', $RouteParamsProvider);
  * @requires $route
  *
  * @description
- * Current set of route parameters. The route parameters are a combination of the
- * {@link ng.$location $location} `search()`, and `path()`. The `path` parameters
- * are extracted when the {@link ngRoute.$route $route} path is matched.
+ * The `$routeParams` service allows you to retrieve the current set of route parameters.
+ *
+ * Requires the {@link ngRoute `ngRoute`} module to be installed.
+ *
+ * The route parameters are a combination of {@link ng.$location `$location`}'s
+ * {@link ng.$location#search `search()`} and {@link ng.$location#path `path()`}.
+ * The `path` parameters are extracted when the {@link ngRoute.$route `$route`} path is matched.
  *
  * In case of parameter name collision, `path` params take precedence over `search` params.
  *
@@ -636,6 +638,8 @@ ngRouteModule.directive('ngView', ngViewFactory);
  * including the rendered template of the current route into the main layout (`index.html`) file.
  * Every time the current route changes, the included view changes with it according to the
  * configuration of the `$route` service.
+ *
+ * Requires the {@link ngRoute `ngRoute`} module to be installed.
  *
  * @animations
  * enter - animation is used to bring new content into the browser.

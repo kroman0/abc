@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-99175f4
+ * @license AngularJS v1.2.0-74ae3ed
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1544,7 +1544,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-99175f4',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-74ae3ed',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -10915,7 +10915,7 @@ function $SceProvider() {
     // the "expression(javascript expression)" syntax which is insecure.
     if (enabled && msie) {
       var documentMode = $document[0].documentMode;
-      if (documentMode !== undefined && documentMode < 7) {
+      if (documentMode !== undefined && documentMode < 8) {
         throw $sceMinErr('iequirks',
           'Strict Contextual Escaping does not support Internet Explorer version < 9 in quirks ' +
           'mode.  You can fix this by adding the text <!doctype html> to the top of your HTML ' +

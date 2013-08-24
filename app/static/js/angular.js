@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-74ae3ed
+ * @license AngularJS v1.2.0-80d0f98
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1544,7 +1544,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-74ae3ed',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-80d0f98',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -11262,6 +11262,7 @@ function $SnifferProvider() {
   this.$get = ['$window', '$document', function($window, $document) {
     var eventSupport = {},
         android = int((/android (\d+)/.exec(lowercase(($window.navigator || {}).userAgent)) || [])[1]),
+        boxee = /Boxee/i.test(($window.navigator || {}).userAgent),
         document = $document[0] || {},
         vendorPrefix,
         vendorRegex = /^(Moz|webkit|O|ms)(?=[A-Z])/,
@@ -11285,10 +11286,10 @@ function $SnifferProvider() {
 
       transitions = !!(('transition' in bodyStyle) || (vendorPrefix + 'Transition' in bodyStyle));
       animations  = !!(('animation' in bodyStyle) || (vendorPrefix + 'Animation' in bodyStyle));
-      
+
       if (android && (!transitions||!animations)) {
-        transitions = isString(document.body.style.webkitTransition); 
-        animations = isString(document.body.style.webkitAnimation); 
+        transitions = isString(document.body.style.webkitTransition);
+        animations = isString(document.body.style.webkitAnimation);
       }
     }
 
@@ -11298,7 +11299,10 @@ function $SnifferProvider() {
       // so let's not use the history API at all.
       // http://code.google.com/p/android/issues/detail?id=17471
       // https://github.com/angular/angular.js/issues/904
-      history: !!($window.history && $window.history.pushState && !(android < 4)),
+
+      // older webit browser (533.9) on Boxee box has exactly the same problem as Android has
+      // so let's not use the history API also
+      history: !!($window.history && $window.history.pushState && !(android < 4) && !boxee),
       hashchange: 'onhashchange' in $window &&
                   // IE8 compatible mode lies
                   (!document.documentMode || document.documentMode > 7),
@@ -14986,7 +14990,7 @@ function classDirective(name, selector) {
 
    ## Animations
 
-   Example that demostrates how addition and removal of classes can be animated.
+   The example below demonstrates how to perform animations using ngClass.
 
    <example animations="true">
      <file name="index.html">
@@ -15031,6 +15035,14 @@ function classDirective(name, selector) {
        });
      </file>
    </example>
+
+
+   ## ngClass and pre-existing CSS3 Transitions/Animations
+   The ngClass directive still supports CSS3 Transitions/Animations even if they do not follow the ngAnimate CSS naming structure.
+   Therefore, if any CSS3 Transition/Animation styles (outside of ngAnimate) are set on the element, then, if a ngClass animation
+   is triggered, the ngClass animation will be skipped so that ngAnimate can allow for the pre-existing transition or animation to
+   take over. This restriction allows for ngClass to still work with standard CSS3 Transitions/Animations that are defined
+   outside of ngAnimate.
  */
 var ngClassDirective = classDirective('', true);
 

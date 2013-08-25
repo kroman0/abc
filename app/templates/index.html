@@ -101,7 +101,7 @@ button.remove {
 </ul>
 <ul class="nav pull-right">
     <li ng-show="logged(me)">
-        <a href="#me" title="{{ me['user-name'] }}" class="dropdown-toggle" data-toggle="dropdown">{{ me['first-name'] }} {{ me['last-name'] }} <span class="caret"></span></a>
+        <a href="#me"  target="_self" title="{{ me['user-name'] }}" class="dropdown-toggle" data-toggle="dropdown">{{ me['first-name'] }} {{ me['last-name'] }} <span class="caret"></span></a>
         <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
             <li ng-repeat="item in dropdownitems"><a href="#/{{ item.id }}"><i class="icon-{{ item.icon }}"></i> {{ item.title }}</a></li>
             <li class="divider"></li>

@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-e848099
+ * @license AngularJS v1.2.0-6b91aa0
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1544,7 +1544,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-e848099',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-6b91aa0',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -9416,8 +9416,8 @@ function $RootScopeProvider(){
     return TTL;
   };
 
-  this.$get = ['$injector', '$exceptionHandler', '$parse',
-      function( $injector,   $exceptionHandler,   $parse) {
+  this.$get = ['$injector', '$exceptionHandler', '$parse', '$browser',
+      function( $injector,   $exceptionHandler,   $parse,   $browser) {
 
     /**
      * @ngdoc function
@@ -10013,12 +10013,15 @@ function $RootScopeProvider(){
        *
        * The `$evalAsync` makes no guarantees as to when the `expression` will be executed, only that:
        *
-       *   - it will execute in the current script execution context (before any DOM rendering).
-       *   - at least one {@link ng.$rootScope.Scope#$digest $digest cycle} will be performed after
-       *     `expression` execution.
+       *   - it will execute after the function that schedule the evaluation is done running (preferably before DOM rendering).
+       *   - at least one {@link ng.$rootScope.Scope#$digest $digest cycle} will be performed after `expression` execution.
        *
        * Any exceptions from the execution of the expression are forwarded to the
        * {@link ng.$exceptionHandler $exceptionHandler} service.
+       *
+       * __Note:__ if this function is called outside of `$digest` cycle, a new $digest cycle will be scheduled.
+       * It is however encouraged to always call code that changes the model from withing an `$apply` call.
+       * That includes code evaluated via `$evalAsync`.
        *
        * @param {(string|function())=} expression An angular expression to be executed.
        *
@@ -10027,6 +10030,16 @@ function $RootScopeProvider(){
        *
        */
       $evalAsync: function(expr) {
+        // if we are outside of an $digest loop and this is the first time we are scheduling async task also schedule
+        // async auto-flush
+        if (!$rootScope.$$phase && !$rootScope.$$asyncQueue.length) {
+          $browser.defer(function() {
+            if ($rootScope.$$asyncQueue.length) {
+              $rootScope.$digest();
+            }
+          });
+        }
+
         this.$$asyncQueue.push(expr);
       },
 
@@ -11367,7 +11380,7 @@ function $TimeoutProvider() {
       var deferred = $q.defer(),
           promise = deferred.promise,
           skipApply = (isDefined(invokeApply) && !invokeApply),
-          timeoutId, cleanup;
+          timeoutId;
 
       timeoutId = $browser.defer(function() {
         try {

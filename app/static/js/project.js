@@ -33,6 +33,14 @@ config(function($routeProvider) {
         controller: PeopleCtrl,
         templateUrl: '/static/templates/people.html'
     }).
+    when('/people/:id', {
+        controller: PersonCtrl,
+        templateUrl: '/static/templates/person.html'
+    }).
+    when('/me', {
+        controller: MeCtrl,
+        templateUrl: '/static/templates/person.html'
+    }).
     otherwise({
         redirectTo: '/projects'
     });
@@ -74,12 +82,24 @@ function CompanyCtrl($scope, $routeParams) {
     var id = $scope.cid = parseInt($routeParams.id, 10),
         fcompany = _.where($scope.companies, {id: id}),
         company = $scope.model = fcompany ? fcompany[0] : $scope.companies[id];
-    $scope.$root.TITLE = $scope.title = company && company.name;
+    $scope.$root.TITLE = $scope.title = company && company.name + ' - Companies';
 }
 
 function PeopleCtrl($scope, $routeParams) {
     $scope.$root.TITLE = 'People';
     $scope.fcompany = $routeParams.fcompany ? $routeParams.fcompany : $scope.people[0]['company-id']
+}
+
+function PersonCtrl($scope, $routeParams) {
+    var id = $scope.cid = parseInt($routeParams.id, 10),
+        fperson = _.where($scope.people, {id: id}),
+        person = $scope.item = fperson ? fperson[0] : $scope.people[id];
+    $scope.$root.TITLE = $scope.title = person && person['first-name'] + ' ' + person['last-name'] + ' - People';
+}
+
+function MeCtrl($scope, $routeParams) {
+    var person = $scope.item = $scope.me;
+    $scope.$root.TITLE = $scope.title = person && person['first-name'] + ' ' + person['last-name'] + ' - People';
 }
 
 function TodosCtrl($scope, Todos) {

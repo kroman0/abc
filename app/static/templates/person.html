@@ -1,16 +1,8 @@
 <div class="page-header">
-    <h1>People</h1>
+    <h1>{{ item['first-name'] }} {{ item['last-name'] }}</h1>
 </div>
-<div class="tabbable tabs-left row-fluid">
-<ul class="nav nav-tabs span3">
-    <li ng-repeat="item in companies" ng-class="{active: fcompany==item.id}"><a href="#people_c{{ item.id }}" data-toggle="tab">{{ item.name }}</a></li>
-</ul>
-<div class="tab-content span8">
-    <div class="tab-pane fade in active" id="people_{{fcompany}}">
-        <div ng-hide="(people | filter:{'company.id': fcompany}).length" class="alert alert-info">No people in company...</div>
-        <ul class="media-list">
-<li ng-repeat="item in people | filter:{'company.id': fcompany}" class="media well well-small">
-    <a class="pull-right" href="#/people/{{ item.id }}" title="{{ item['first-name'] }} {{ item['last-name'] }}"><img class="media-object img-polaroid" ng-src="{{ item['avatar-url'] }}" alt="{{ item['first-name'] }} {{ item['last-name'] }}"></a>
+<li class="media well well-small">
+    <img class="pull-right media-object img-polaroid" ng-src="{{ item['avatar-url'] }}" alt="{{ item['first-name'] }} {{ item['last-name'] }}">
     <div class="media-body">
         <h4 class="media-heading">
             <a href="#/people/{{ item.id }}" title="{{ item['first-name'] }} {{ item['last-name'] }}">{{ item['first-name'] }} {{ item['last-name'] }}</a>
@@ -25,7 +17,3 @@
         Time zone: {{ item['time-zone-name'] }}
     </div>
 </li>
-        </ul>
-    </div>
-</div>
-</div>

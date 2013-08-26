@@ -17,7 +17,7 @@ Test Teardown  Close All Browsers and Report Status
 
 User can edit and delete calendar entries on project calendar page
     [Documentation]  User should edit and delete calendar entries.
-    [Tags]  calendar  crud  projects
+    [Tags]  calendar  crud  projects  screenshots
     Given an project calendar page
     When user edit calendar entry
     Then page should contain edited entry

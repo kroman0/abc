@@ -38,31 +38,31 @@ Navigation menu should work correctly
     [Tags]  navigation  general
     Given an bb-classic app
     When click on "Projects" link in navbar
-    Then location should be  ${APP_URL}/#projects
+    Then location should be  ${APP_URL}/#/projects
     And heading should be "Projects"
     And title should be  Projects - BB
     When click on "Companies" link in navbar
-    Then location should be  ${APP_URL}/#companies
+    Then location should be  ${APP_URL}/#/companies
     And heading should be "Companies"
     And title should be  Companies - BB
     And wait for data loading
     When click link  Name of #0
-    Then location should be  ${APP_URL}/#companies/0
+    Then location should be  ${APP_URL}/#/companies/0
     And heading should be "Name of #0"
     And title should be  Name of #0 - Companies - BB
     When click on "To-Dos" link in navbar
-    Then location should be  ${APP_URL}/#todos
+    Then location should be  ${APP_URL}/#/todos
     And heading should be "My to-dos"
     And title should be  My to-dos - BB
     When click on "Time" link in navbar
-    Then location should be  ${APP_URL}/#time_report
+    Then location should be  ${APP_URL}/#/time_report
     And heading should be "Time report"
     And title should be  Time report - BB
     When click on "People" link in navbar
-    Then location should be  ${APP_URL}/#people
+    Then location should be  ${APP_URL}/#/people
     And heading should be "People"
     And title should be  People - BB
     When click link  First#0 Last
-    Then location should be  ${APP_URL}/#people/0
+    Then location should be  ${APP_URL}/#/people/0
     And heading should be "First#0 Last"
     And title should be  First#0 Last - People - BB

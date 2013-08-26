@@ -65,6 +65,7 @@ click on ${name} link in navbar
 
 heading should be ${heading}
     [Documentation]  Check if heading contain text.
+    Wait Until Page Contains Element  xpath=//h1[contains(text(),${heading})]
     Page should contain element  xpath=//h1[contains(text(),${heading})]
 
 Wait for data loading
@@ -74,9 +75,9 @@ Wait for data loading
 Click on ${text} in ${state} state and wait effect
     [Documentation]  Switch state filter, wait, click on link in state block and wait.
     Click link  ${state}
-    Wait Until Keyword Succeeds  5 sec  0.1 sec  Element Should Be Visible  xpath=//*[@id="projects_${state}"]//a[contains(text(),${text})]
-    Click element  xpath=//*[@id="projects_${state}"]//a[contains(text(),${text})]
-    Wait Until Keyword Succeeds  5 sec  0.1 sec  Element Should Be Visible  xpath=//*[@id="projects_${state}"]//*[@id="projects_${state}_${text[-2]}"]//a
+    Wait Until Keyword Succeeds  5 sec  0.1 sec  Element Should Be Visible  xpath=//*[@id="projects-${state}"]//a[contains(text(),${text})]
+    Click element  xpath=//*[@id="projects-${state}"]//a[contains(text(),${text})]
+    Wait Until Keyword Succeeds  5 sec  0.1 sec  Element Should Be Visible  xpath=//*[@id="projects-${state}"]//*[@id="projects-${state}-${text[-2]}"]//a
 
 Click on ${text} in projectnav
     [Documentation]  Click on link in project navigation.

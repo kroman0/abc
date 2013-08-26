@@ -29,7 +29,7 @@ go to my profile page
     [Documentation]  Go to my profile page thru the user actions menu.
     Click link  First Last
     Click link  My profile
-    Location should be  ${APP_URL}/#me
+    Location should be  ${APP_URL}/#/me
 
 my info be visible
     [Documentation]  Check if page contains user info.

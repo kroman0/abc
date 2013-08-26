@@ -28,7 +28,7 @@ User can view todos for it and other users
 
 User can add edit and delete todo lists and items
     [Documentation]  User should add, edit and delete todo lists and items.
-    [Tags]  todo  crud  projects
+    [Tags]  todo  crud  projects  screenshots
     Given an project todos page
     When user add todo list
     Then page should contain added todo list

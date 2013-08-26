@@ -43,7 +43,7 @@ Projects page should contains links to projects
 
 Project navigation should work correctly
     [Documentation]  Projects navigation should change location and heading correctly.
-    [Tags]  navigation  projects
+    [Tags]  navigation  projects  screenshots
     Given an projects page
     When click link  Name of #0
     Then location should be  ${APP_URL}/#projects/0

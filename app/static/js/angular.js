@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-44ad61e
+ * @license AngularJS v1.2.0-8e48c4f
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1554,7 +1554,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-44ad61e',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-8e48c4f',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -6528,7 +6528,7 @@ function $HttpProvider() {
 
       if (cache) {
         cachedResp = cache.get(url);
-        if (cachedResp) {
+        if (isDefined(cachedResp)) {
           if (cachedResp.then) {
             // cached request has already been sent, but there is no response yet
             cachedResp.then(removePendingReq, removePendingReq);
@@ -6548,7 +6548,7 @@ function $HttpProvider() {
       }
 
       // if we won't have the response in cache, send the request to the backend
-      if (!cachedResp) {
+      if (isUndefined(cachedResp)) {
         $httpBackend(config.method, url, reqData, done, reqHeaders, config.timeout,
             config.withCredentials, config.responseType);
       }

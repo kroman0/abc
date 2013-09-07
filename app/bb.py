@@ -279,8 +279,8 @@ class MainPage(BaseRequestHandler):
     def get(self):
         """ GET request
         """
-        with open(_('index.html'), 'rb') as f:
-            self.response.write(f.read())
+        with open(_('index.html'), 'rb') as _file:
+            self.response.write(_file.read())
         #self.response.write(template.render(
             #_('index.html'),
             #{'dev': self.dev}))

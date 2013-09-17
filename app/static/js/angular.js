@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-d241438
+ * @license AngularJS v1.2.0-265f0b5
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1557,7 +1557,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-d241438',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-265f0b5',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -12633,7 +12633,7 @@ function limitToFilter(){
          <table class="friend">
            <tr>
              <th><a href="" ng-click="predicate = 'name'; reverse=false">Name</a>
-                 (<a href ng-click="predicate = '-name'; reverse=false">^</a>)</th>
+                 (<a href="" ng-click="predicate = '-name'; reverse=false">^</a>)</th>
              <th><a href="" ng-click="predicate = 'phone'; reverse=!reverse">Phone Number</a></th>
              <th><a href="" ng-click="predicate = 'age'; reverse=!reverse">Age</a></th>
            </tr>
@@ -12738,10 +12738,10 @@ function ngDirective(directive) {
  * @restrict E
  *
  * @description
- * Modifies the default behavior of html A tag, so that the default action is prevented when href
- * attribute is empty.
+ * Modifies the default behavior of the html A tag so that the default action is prevented when
+ * the href attribute is empty.
  *
- * The reasoning for this change is to allow easy creation of action links with `ngClick` directive
+ * This change permits the easy creation of action links with the `ngClick` directive
  * without changing the location or causing page reloads, e.g.:
  * `<a href="" ng-click="model.$save()">Save</a>`
  */
@@ -14334,6 +14334,9 @@ var VALID_CLASS = 'ng-valid',
  * data-binding. Notice how different directives (`contenteditable`, `ng-model`, and `required`)
  * collaborate together to achieve the desired result.
  *
+ * Note that `contenteditable` is an HTML5 attribute, which tells the browser to let the element
+ * contents be edited in place by the user.  This will not work on older browsers.
+ *
  * <example module="customControl">
     <file name="style.css">
       [contenteditable] {
@@ -15554,8 +15557,8 @@ var ngCspDirective = ['$sniffer', function($sniffer) {
  * @name ng.directive:ngClick
  *
  * @description
- * The ngClick allows you to specify custom behavior when
- * element is clicked.
+ * The ngClick directive allows you to specify custom behavior when
+ * an element is clicked.
  *
  * @element ANY
  * @param {expression} ngClick {@link guide/expression Expression} to evaluate upon

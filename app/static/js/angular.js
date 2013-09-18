@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-265f0b5
+ * @license AngularJS v1.2.0-04c9cae
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1557,7 +1557,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-265f0b5',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-04c9cae',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -7984,11 +7984,19 @@ function ensureSafeObject(obj, fullExpression) {
   if (obj && obj.constructor === obj) {
     throw $parseMinErr('isecfn',
         'Referencing Function in Angular expressions is disallowed! Expression: {0}', fullExpression);
+  // 
+  } else if (// isWindow(obj)
+      obj && obj.document && obj.location && obj.alert && obj.setInterval) {
+    throw $parseMinErr('isecwindow',
+        'Referencing the Window in Angular expressions is disallowed! Expression: {0}', fullExpression);
+  } else if (// isElement(obj)
+      obj && (obj.nodeName || (obj.on && obj.find))) {
+    throw $parseMinErr('isecdom',
+        'Referencing DOM nodes in Angular expressions is disallowed! Expression: {0}', fullExpression);
   } else {
     return obj;
   }
 }
-
 
 var OPERATORS = {
     'null':function(){return null;},
@@ -8630,6 +8638,9 @@ function parser(text, json, $filter, csp){
         args.push(argsFn[i](scope, locals));
       }
       var fnPtr = fn(scope, locals, context) || noop;
+
+      ensureSafeObject(fnPtr, text);
+
       // IE stupidity!
       var v = fnPtr.apply
           ? fnPtr.apply(context, args)
@@ -8645,7 +8656,7 @@ function parser(text, json, $filter, csp){
         v = v.$$v;
       }
 
-      return v;
+      return ensureSafeObject(v, text);
     };
   }
 
@@ -16845,7 +16856,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  *
  * @description
  * The `ngShow` directive shows and hides the given HTML element conditionally based on the expression
- * provided to the ngShow attribute. The show and hide mechanism is a achieved by removing and adding
+ * provided to the ngShow attribute. The show and hide mechanism is achieved by removing and adding
  * the `ng-hide` CSS class onto the element. The `.ng-hide` CSS class is a predefined CSS class present
  * in AngularJS which sets the display style to none (using an !important flag).
  *

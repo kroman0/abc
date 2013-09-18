@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-265f0b5
+ * @license AngularJS v1.2.0-04c9cae
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -16,7 +16,7 @@ var $resourceMinErr = angular.$$minErr('$resource');
  *
  * `ngResource` is the name of the optional Angular module that adds support for interacting with
  * [RESTful](http://en.wikipedia.org/wiki/Representational_State_Transfer) server-side data sources.
- * `ngReource` provides the {@link ngResource.$resource `$resource`} serivce.
+ * `ngResource` provides the {@link ngResource.$resource `$resource`} service.
  *
  * {@installModule resource}
  *

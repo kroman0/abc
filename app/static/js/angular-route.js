@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-e275129
+ * @license AngularJS v1.2.0-025c921
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -130,8 +130,8 @@ function $RouteProvider(){
    *      The custom `redirectTo` function is expected to return a string which will be used
    *      to update `$location.path()` and `$location.search()`.
    *
-   *    - `[reloadOnSearch=true]` - {boolean=} - reload route when only $location.search()
-   *    changes.
+   *    - `[reloadOnSearch=true]` - {boolean=} - reload route when only `$location.search()`
+   *      or `$location.hash()` changes.
    *
    *      If the option is set to `false` and url in the browser changes, then
    *      `$routeUpdate` event is broadcasted on the root scope.

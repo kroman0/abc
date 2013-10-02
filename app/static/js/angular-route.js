@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-025c921
+ * @license AngularJS v1.2.0-ac72bee
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -367,6 +367,7 @@ function $RouteProvider(){
      * defined in `resolve` route property. Once  all of the dependencies are resolved
      * `$routeChangeSuccess` is fired.
      *
+     * @param {Object} angularEvent Synthetic event object.
      * @param {Route} next Future route information.
      * @param {Route} current Current route information.
      */

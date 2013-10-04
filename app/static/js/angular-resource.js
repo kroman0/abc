@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-ac72bee
+ * @license AngularJS v1.2.0-31f190d
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -497,8 +497,6 @@ angular.module('ngResource', ['ng']).
 
             value.$resolved = true;
 
-            (success||noop)(value, response.headers);
-
             response.resource = value;
 
             return response;
@@ -508,8 +506,15 @@ angular.module('ngResource', ['ng']).
             (error||noop)(response);
 
             return $q.reject(response);
-          }).then(responseInterceptor, responseErrorInterceptor);
+          });
 
+          promise = promise.then(
+              function(response) {
+                var value = responseInterceptor(response);
+                (success||noop)(value, response.headers);
+                return value;
+              },
+              responseErrorInterceptor);
 
           if (!isInstanceCall) {
             // we are creating instance / collection

@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-8336b3a
+ * @license AngularJS v1.2.0-9089468
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1595,7 +1595,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-8336b3a',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-9089468',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -12293,7 +12293,7 @@ function filterFilter() {
       default:
         comperator = function(obj, text) {
           text = (''+text).toLowerCase();
-          return (''+obj).toLowerCase().indexOf(text) > -1
+          return (''+obj).toLowerCase().indexOf(text) > -1;
         };
     }
     var search = function(obj, text){
@@ -13110,7 +13110,7 @@ function ngDirective(directive) {
  *
  * This change permits the easy creation of action links with the `ngClick` directive
  * without changing the location or causing page reloads, e.g.:
- * `<a href="" ng-click="model.$save()">Save</a>`
+ * `<a href="" ng-click="list.addItem()">Add Item</a>`
  */
 var htmlAnchorDirective = valueFn({
   restrict: 'E',
@@ -15144,7 +15144,8 @@ var requiredDirective = function() {
  * @name ng.directive:ngList
  *
  * @description
- * Text input that converts between comma-separated string into an array of strings.
+ * Text input that converts between a delimited string and an array of strings. The delimiter
+ * can be a fixed string (by default a comma) or a regular expression.
  *
  * @element input
  * @param {string=} ngList optional delimiter that should be used to split the value. If

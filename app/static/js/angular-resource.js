@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-8336b3a
+ * @license AngularJS v1.2.0-9089468
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -94,7 +94,7 @@ var $resourceMinErr = angular.$$minErr('$resource');
  *     caching.
  *   - **`timeout`** – `{number|Promise}` – timeout in milliseconds, or {@link ng.$q promise} that
  *     should abort the request when resolved.
- *   - **`withCredentials`** - `{boolean}` - whether to to set the `withCredentials` flag on the
+ *   - **`withCredentials`** - `{boolean}` - whether to set the `withCredentials` flag on the
  *     XHR object. See {@link https://developer.mozilla.org/en/http_access_control#section_5
  *     requests with credentials} for more information.
  *   - **`responseType`** - `{string}` - see {@link

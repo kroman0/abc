@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-31f190d
+ * @license AngularJS v1.2.0-8336b3a
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -198,7 +198,9 @@ function $RouteProvider(){
           + (optional ? '' : slash)
           + '(?:'
           + (optional ? slash : '')
-          + (star && '(.+)?' || '([^/]+)?') + ')'
+          + (star && '(.+?)' || '([^/]+)')
+          + (optional || '')
+          + ')'
           + (optional || '');
       })
       .replace(/([\/$\*])/g, '\\$1');

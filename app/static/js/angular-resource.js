@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-31f190d
+ * @license AngularJS v1.2.0-8336b3a
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -471,7 +471,7 @@ angular.module('ngResource', ['ng']).
             }
           });
 
-          httpConfig.data = data;
+          if (hasBody) httpConfig.data = data;
           route.setUrlParams(httpConfig, extend({}, extractParams(data, action.params || {}), params), action.url);
 
           var promise = $http(httpConfig).then(function(response) {

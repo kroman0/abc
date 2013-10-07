@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-47f7bd7
+ * @license AngularJS v1.2.0-670cd9c
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -352,6 +352,9 @@ angular.module('ngResource', ['ng']).
 
         var urlParams = self.urlParams = {};
         forEach(url.split(/\W/), function(param){
+          if (param === 'hasOwnProperty') {
+            throw $resourceMinErr('badname', "hasOwnProperty is not a valid parameter name.");
+          }
           if (!(new RegExp("^\\d+$").test(param)) && param && (new RegExp("(^|[^\\\\]):" + param + "(\\W|$)").test(url))) {
               urlParams[param] = true;
           }

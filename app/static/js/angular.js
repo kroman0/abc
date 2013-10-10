@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-2fe5a2d
+ * @license AngularJS v1.2.0-0727260
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1601,7 +1601,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-2fe5a2d',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-0727260',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -1714,8 +1714,7 @@ function publishExternalAPI(angular){
         $sniffer: $SnifferProvider,
         $templateCache: $TemplateCacheProvider,
         $timeout: $TimeoutProvider,
-        $window: $WindowProvider,
-        $$urlUtils: $$UrlUtilsProvider
+        $window: $WindowProvider
       });
     }
   ]);
@@ -2000,12 +1999,13 @@ function JQLiteData(element, key, value) {
 }
 
 function JQLiteHasClass(element, selector) {
+  if (!element.getAttribute) return false;
   return ((" " + (element.getAttribute('class') || '') + " ").replace(/[\n\t]/g, " ").
       indexOf( " " + selector + " " ) > -1);
 }
 
 function JQLiteRemoveClass(element, cssClasses) {
-  if (cssClasses) {
+  if (cssClasses && element.setAttribute) {
     forEach(cssClasses.split(' '), function(cssClass) {
       element.setAttribute('class', trim(
           (" " + (element.getAttribute('class') || '') + " ")
@@ -2017,7 +2017,7 @@ function JQLiteRemoveClass(element, cssClasses) {
 }
 
 function JQLiteAddClass(element, cssClasses) {
-  if (cssClasses) {
+  if (cssClasses && element.setAttribute) {
     var existingClasses = (' ' + (element.getAttribute('class') || '') + ' ')
                             .replace(/[\n\t]/g, " ");
 
@@ -2895,46 +2895,37 @@ function annotate(fn) {
  *
  * @description
  *
- * Use `$provide` to register new providers with the `$injector`. The providers are the factories for the instance.
- * The providers share the same name as the instance they create with `Provider` suffixed to them.
+ * The {@link AUTO.$provide $provide} service has a number of methods for registering components with
+ * the {@link AUTO.$injector $injector}. Many of these functions are also exposed on {@link angular.Module}.
  *
- * A provider is an object with a `$get()` method. The injector calls the `$get` method to create a new instance of
- * a service. The Provider can have additional methods which would allow for configuration of the provider.
+ * An Angular **service** is a singleton object created by a **service factory**.  These **service
+ * factories** are functions which, in turn, are created by a **service provider**.
+ * The **service providers** are constructor functions. When instantiated they must contain a property
+ * called `$get`, which holds the **service factory** function.
+ * 
+ * When you request a service, the {@link AUTO.$injector $injector} is responsible for finding the
+ * correct **service provider**, instantiating it and then calling its `$get` **service factory**
+ * function to get the instance of the **service**.
+ * 
+ * Often services have no configuration options and there is no need to add methods to the service
+ * provider.  The provider will be no more than a constructor function with a `$get` property. For
+ * these cases the {@link AUTO.$provide $provide} service has additional helper methods to register
+ * services without specifying a provider.
  *
- * <pre>
- *   function GreetProvider() {
- *     var salutation = 'Hello';
+ * * {@link AUTO.$provide#provider provider(provider)} - registers a **service provider** with the
+ *     {@link AUTO.$injector $injector}
+ * * {@link AUTO.$provide#constant constant(obj)} - registers a value/object that can be accessed by
+ *     providers and services.
+ * * {@link AUTO.$provide#value value(obj)} - registers a value/object that can only be accessed by
+ *     services, not providers.
+ * * {@link AUTO.$provide#factory factory(fn)} - registers a service **factory function**, `fn`, that
+ *     will be wrapped in a **service provider** object, whose `$get` property will contain the given
+ *     factory function.
+ * * {@link AUTO.$provide#service service(class)} - registers a **constructor function**, `class` that
+ *     will be wrapped in a **service provider** object, whose `$get` property will instantiate a new
+ *     object using the given constructor function.
  *
- *     this.salutation = function(text) {
- *       salutation = text;
- *     };
- *
- *     this.$get = function() {
- *       return function (name) {
- *         return salutation + ' ' + name + '!';
- *       };
- *     };
- *   }
- *
- *   describe('Greeter', function(){
- *
- *     beforeEach(module(function($provide) {
- *       $provide.provider('greet', GreetProvider);
- *     }));
- *
- *     it('should greet', inject(function(greet) {
- *       expect(greet('angular')).toEqual('Hello angular!');
- *     }));
- *
- *     it('should allow configuration of salutation', function() {
- *       module(function(greetProvider) {
- *         greetProvider.salutation('Ahoj');
- *       });
- *       inject(function(greet) {
- *         expect(greet('angular')).toEqual('Ahoj angular!');
- *       });
- *     });
- * </pre>
+ * See the individual methods for more information and examples.
  */
 
 /**
@@ -2943,7 +2934,18 @@ function annotate(fn) {
  * @methodOf AUTO.$provide
  * @description
  *
- * Register a provider for a service. The providers can be retrieved and can have additional configuration methods.
+ * Register a **provider function** with the {@link AUTO.$injector $injector}. Provider functions are
+ * constructor functions, whose instances are responsible for "providing" a factory for a service.
+ * 
+ * Service provider names start with the name of the service they provide followed by `Provider`.
+ * For example, the {@link ng.$log $log} service has a provider called {@link ng.$logProvider $logProvider}.
+ *
+ * Service provider objects can have additional methods which allow configuration of the provider and
+ * its service. Importantly, you can configure what kind of service is created by the `$get` method,
+ * or how that service will act. For example, the {@link ng.$logProvider $logProvider} has a method
+ * {@link ng.$logProvider#debugEnabled debugEnabled}
+ * which lets you specify whether the {@link ng.$log $log} service will log debug messages to the
+ * console or not.
  *
  * @param {string} name The name of the instance. NOTE: the provider will be available under `name + 'Provider'` key.
  * @param {(Object|function())} provider If the provider is:
@@ -2954,6 +2956,70 @@ function annotate(fn) {
  *               {@link AUTO.$injector#instantiate $injector.instantiate()}, then treated as `object`.
  *
  * @returns {Object} registered provider instance
+
+ * @example
+ *
+ * The following example shows how to create a simple event tracking service and register it using
+ * {@link AUTO.$provide#provider $provide.provider()}.
+ *
+ * <pre>
+ *  // Define the eventTracker provider
+ *  function EventTrackerProvider() {
+ *    var trackingUrl = '/track';
+ *
+ *    // A provider method for configuring where the tracked events should been saved
+ *    this.setTrackingUrl = function(url) {
+ *      trackingUrl = url;
+ *    };
+ *
+ *    // The service factory function
+ *    this.$get = ['$http', function($http) {
+ *      var trackedEvents = {};
+ *      return {
+ *        // Call this to track an event
+ *        event: function(event) {
+ *          var count = trackedEvents[event] || 0;
+ *          count += 1;
+ *          trackedEvents[event] = count;
+ *          return count;
+ *        },
+ *        // Call this to save the tracked events to the trackingUrl
+ *        save: function() {
+ *          $http.post(trackingUrl, trackedEvents);
+ *        }
+ *      };
+ *    }];
+ *  }
+ *
+ *  describe('eventTracker', function() {
+ *    var postSpy;
+ *
+ *    beforeEach(module(function($provide) {
+ *      // Register the eventTracker provider
+ *      $provide.provider('eventTracker', EventTrackerProvider);
+ *    }));
+ *
+ *    beforeEach(module(function(eventTrackerProvider) {
+ *      // Configure eventTracker provider
+ *      eventTrackerProvider.setTrackingUrl('/custom-track');
+ *    }));
+ *
+ *    it('tracks events', inject(function(eventTracker) {
+ *      expect(eventTracker.event('login')).toEqual(1);
+ *      expect(eventTracker.event('login')).toEqual(2);
+ *    }));
+ *
+ *    it('saves to the tracking url', inject(function(eventTracker, $http) {
+ *      postSpy = spyOn($http, 'post');
+ *      eventTracker.event('login');
+ *      eventTracker.save();
+ *      expect(postSpy).toHaveBeenCalled();
+ *      expect(postSpy.mostRecentCall.args[0]).not.toEqual('/track');
+ *      expect(postSpy.mostRecentCall.args[0]).toEqual('/custom-track');
+ *      expect(postSpy.mostRecentCall.args[1]).toEqual({ 'login': 1 });
+ *    }));
+ *  });
+ * </pre>
  */
 
 /**
@@ -2962,12 +3028,32 @@ function annotate(fn) {
  * @methodOf AUTO.$provide
  * @description
  *
- * A short hand for configuring services if only `$get` method is required.
+ * Register a **service factory**, which will be called to return the service instance.
+ * This is short for registering a service where its provider consists of only a `$get` property,
+ * which is the given service factory function.
+ * You should use {@link AUTO.$provide#factory $provide.factor(getFn)} if you do not need to configure
+ * your service in a provider.
  *
  * @param {string} name The name of the instance.
  * @param {function()} $getFn The $getFn for the instance creation. Internally this is a short hand for
  * `$provide.provider(name, {$get: $getFn})`.
  * @returns {Object} registered provider instance
+ *
+ * @example
+ * Here is an example of registering a service 
+ * <pre>
+ *   $provide.factory('ping', ['$http', function($http) {
+ *     return function ping() {
+ *       return $http.send('/ping');
+ *     };
+ *   }]);
+ * </pre>
+ * You would then inject and use this service like this:
+ * <pre>
+ *   someModule.controller('Ctrl', ['ping', function(ping) {
+ *     ping();
+ *   }]);
+ * </pre>
  */
 
 
@@ -2977,11 +3063,34 @@ function annotate(fn) {
  * @methodOf AUTO.$provide
  * @description
  *
- * A short hand for registering service of given class.
+ * Register a **service constructor**, which will be invoked with `new` to create the service instance.
+ * This is short for registering a service where its provider's `$get` property is the service
+ * constructor function that will be used to instantiate the service instance.
+ *
+ * You should use {@link AUTO.$provide#service $provide.service(class)} if you define your service
+ * as a type/class. This is common when using {@link http://coffeescript.org CoffeeScript}.
  *
  * @param {string} name The name of the instance.
  * @param {Function} constructor A class (constructor function) that will be instantiated.
  * @returns {Object} registered provider instance
+ *
+ * @example
+ * Here is an example of registering a service using {@link AUTO.$provide#service $provide.service(class)}
+ * that is defined as a CoffeeScript class.
+ * <pre>
+ *   class Ping
+ *     constructor: (@$http)->
+ *     send: ()=>
+ *       @$http.get('/ping')
+ *  
+ *   $provide.service('ping', ['$http', Ping])
+ * </pre>
+ * You would then inject and use this service like this:
+ * <pre>
+ *   someModule.controller 'Ctrl', ['ping', (ping)->
+ *     ping.send()
+ *   ]
+ * </pre>
  */
 
 
@@ -2991,11 +3100,29 @@ function annotate(fn) {
  * @methodOf AUTO.$provide
  * @description
  *
- * A short hand for configuring services if the `$get` method is a constant.
+ * Register a **value service** with the {@link AUTO.$injector $injector}, such as a string, a number,
+ * an array, an object or a function.  This is short for registering a service where its provider's
+ * `$get` property is a factory function that takes no arguments and returns the **value service**.
  *
+ * Value services are similar to constant services, except that they cannot be injected into a module
+ * configuration function (see {@link angular.Module#config}) but they can be overridden by an Angular
+ * {@link AUTO.$provide#decorator decorator}.
+ * 
  * @param {string} name The name of the instance.
  * @param {*} value The value.
  * @returns {Object} registered provider instance
+ *
+ * @example
+ * Here are some examples of creating value services.
+ * <pre>
+ *   $provide.constant('ADMIN_USER', 'admin');
+ *   
+ *   $provide.constant('RoleLookup', { admin: 0, writer: 1, reader: 2 });
+ *   
+ *   $provide.constant('halfOf', function(value) {
+ *     return value / 2;
+ *   });
+ * </pre>
  */
 
 
@@ -3005,13 +3132,26 @@ function annotate(fn) {
  * @methodOf AUTO.$provide
  * @description
  *
- * A constant value, but unlike {@link AUTO.$provide#value value} it can be injected
- * into configuration function (other modules) and it is not interceptable by
- * {@link AUTO.$provide#decorator decorator}.
+ * Register a **constant service**, such as a string, a number, an array, an object or a function, with
+ * the {@link AUTO.$injector $injector}. Unlike {@link AUTO.$provide#value value} it can be injected
+ * into a module configuration function (see {@link angular.Module#config}) and it cannot be
+ * overridden by an Angular {@link AUTO.$provide#decorator decorator}.
  *
  * @param {string} name The name of the constant.
  * @param {*} value The constant value.
  * @returns {Object} registered instance
+ *
+ * @example
+ * Here a some examples of creating constants:
+ * <pre>
+ *   $provide.constant('SHARD_HEIGHT', 306);
+ *   
+ *   $provide.constant('MY_COLOURS', ['red', 'blue', 'grey']);
+ *   
+ *   $provide.constant('double', function(value) {
+ *     return value * 2;
+ *   });
+ * </pre>
  */
 
 
@@ -3021,17 +3161,29 @@ function annotate(fn) {
  * @methodOf AUTO.$provide
  * @description
  *
- * Decoration of service, allows the decorator to intercept the service instance creation. The
- * returned instance may be the original instance, or a new instance which delegates to the
- * original instance.
+ * Register a **service decorator** with the {@link AUTO.$injector $injector}. A service decorator
+ * intercepts the creation of a service, allowing it to override or modify the behaviour of the
+ * service. The object returned by the decorator may be the original service, or a new service object
+ * which replaces or wraps and delegates to the original service.
  *
  * @param {string} name The name of the service to decorate.
  * @param {function()} decorator This function will be invoked when the service needs to be
- *    instantiated. The function is called using the {@link AUTO.$injector#invoke
- *    injector.invoke} method and is therefore fully injectable. Local injection arguments:
+ *    instantiated and should return the decorated service instance. The function is called using
+ *    the {@link AUTO.$injector#invoke injector.invoke} method and is therefore fully injectable.
+ *    Local injection arguments:
  *
  *    * `$delegate` - The original service instance, which can be monkey patched, configured,
  *      decorated or delegated to.
+ *
+ * @example
+ * Here we decorate the {@link ng.$log $log} service to convert warnings to errors by intercepting
+ * calls to {@link ng.$log#error $log.warn()}.
+ * <pre>
+ *   $provider.decorator('$log', ['$delegate', function($delegate) {
+ *     $delegate.warn = $delegate.error;
+ *     return $delegate;
+ *   }]);
+ * </pre>
  */
 
 
@@ -3247,6 +3399,7 @@ function createInjector(modulesToLoad) {
     };
   }
 }
+
 
 /**
  * @ngdoc function
@@ -4440,9 +4593,9 @@ function $CompileProvider($provide) {
 
   this.$get = [
             '$injector', '$interpolate', '$exceptionHandler', '$http', '$templateCache', '$parse',
-            '$controller', '$rootScope', '$document', '$sce', '$$urlUtils', '$animate',
+            '$controller', '$rootScope', '$document', '$sce', '$animate',
     function($injector,   $interpolate,   $exceptionHandler,   $http,   $templateCache,   $parse,
-             $controller,   $rootScope,   $document,   $sce,   $$urlUtils, $animate) {
+             $controller,   $rootScope,   $document,   $sce,   $animate) {
 
     var Attributes = function(element, attr) {
       this.$$element = element;
@@ -4534,9 +4687,9 @@ function $CompileProvider($provide) {
           // sanitize a[href] and img[src] values
           if ((nodeName === 'A' && key === 'href') ||
               (nodeName === 'IMG' && key === 'src')) {
-            // NOTE: $$urlUtils.resolve() doesn't support IE < 8 so we don't sanitize for that case.
+            // NOTE: urlResolve() doesn't support IE < 8 so we don't sanitize for that case.
             if (!msie || msie >= 8 ) {
-              normalizedVal = $$urlUtils.resolve(value);
+              normalizedVal = urlResolve(value).href;
               if (normalizedVal !== '') {
                 if ((key === 'href' && !normalizedVal.match(aHrefSanitizationWhitelist)) ||
                     (key === 'src' && !normalizedVal.match(imgSrcSanitizationWhitelist))) {
@@ -5929,8 +6082,8 @@ function $HttpProvider() {
    */
   var responseInterceptorFactories = this.responseInterceptors = [];
 
-  this.$get = ['$httpBackend', '$browser', '$cacheFactory', '$rootScope', '$q', '$injector', '$$urlUtils',
-      function($httpBackend, $browser, $cacheFactory, $rootScope, $q, $injector, $$urlUtils) {
+  this.$get = ['$httpBackend', '$browser', '$cacheFactory', '$rootScope', '$q', '$injector',
+      function($httpBackend, $browser, $cacheFactory, $rootScope, $q, $injector) {
 
     var defaultCache = $cacheFactory('$http');
 
@@ -6446,7 +6599,7 @@ function $HttpProvider() {
       config.headers = headers;
       config.method = uppercase(config.method);
 
-      var xsrfValue = $$urlUtils.isSameOrigin(config.url)
+      var xsrfValue = urlIsSameOrigin(config.url)
           ? $browser.cookies()[config.xsrfCookieName || defaults.xsrfCookieName]
           : undefined;
       if (xsrfValue) {
@@ -6915,8 +7068,7 @@ function createHttpBackend($browser, XHR, $browserDefer, callbacks, rawDocument,
     }
 
     function completeRequest(callback, status, response, headersString) {
-      // URL_MATCH is defined in src/service/location.js
-      var protocol = (url.match(SERVER_MATCH) || ['', locationProtocol])[1];
+      var protocol = locationProtocol || urlResolve(url).protocol;
 
       // cancel timeout and subsequent timeout promise resolution
       timeoutId && $browserDefer.cancel(timeoutId);
@@ -7357,8 +7509,7 @@ function $LocaleProvider(){
   };
 }
 
-var SERVER_MATCH = /^([^:]+):\/\/(\w+:{0,1}\w*@)?(\{?[\w\.-]*\}?)(:([0-9]+))?(\/[^\?#]*)?(\?([^#]*))?(#(.*))?$/,
-    PATH_MATCH = /^([^\?#]*)(\?([^#]*))?(#(.*))?$/,
+var PATH_MATCH = /^([^\?#]*)(\?([^#]*))?(#(.*))?$/,
     DEFAULT_PORTS = {'http': 80, 'https': 443, 'ftp': 21};
 var $locationMinErr = minErr('$location');
 
@@ -7380,39 +7531,40 @@ function encodePath(path) {
   return segments.join('/');
 }
 
-function matchUrl(url, obj) {
-  var match = SERVER_MATCH.exec(url);
+function parseAbsoluteUrl(absoluteUrl, locationObj) {
+  var parsedUrl = urlResolve(absoluteUrl);
 
-  obj.$$protocol = match[1];
-  obj.$$host = match[3];
-  obj.$$port = int(match[5]) || DEFAULT_PORTS[match[1]] || null;
+  locationObj.$$protocol = parsedUrl.protocol;
+  locationObj.$$host = parsedUrl.hostname;
+  locationObj.$$port = int(parsedUrl.port) || DEFAULT_PORTS[parsedUrl.protocol] || null;
 }
 
-function matchAppUrl(url, obj) {
-  var match = PATH_MATCH.exec(url);
 
-  obj.$$path = decodeURIComponent(match[1]);
-  obj.$$search = parseKeyValue(match[3]);
-  obj.$$hash = decodeURIComponent(match[5] || '');
+function parseAppUrl(relativeUrl, locationObj) {
+  var prefixed = (relativeUrl.charAt(0) !== '/');
+  if (prefixed) {
+    relativeUrl = '/' + relativeUrl;
+  }
+  var match = urlResolve(relativeUrl);
+  locationObj.$$path = decodeURIComponent(prefixed && match.pathname.charAt(0) === '/' ? match.pathname.substring(1) : match.pathname);
+  locationObj.$$search = parseKeyValue(match.search);
+  locationObj.$$hash = decodeURIComponent(match.hash);
 
   // make sure path starts with '/';
-  if (obj.$$path && obj.$$path.charAt(0) != '/') obj.$$path = '/' + obj.$$path;
+  if (locationObj.$$path && locationObj.$$path.charAt(0) != '/') locationObj.$$path = '/' + locationObj.$$path;
 }
 
-
-function composeProtocolHostPort(protocol, host, port) {
-  return protocol + '://' + host + (port == DEFAULT_PORTS[protocol] ? '' : ':' + port);
-}
 
 /**
  *
  * @param {string} begin
  * @param {string} whole
- * @param {string} otherwise
- * @returns {string} returns text from whole after begin or otherwise if it does not begin with expected string.
+ * @returns {string} returns text from whole after begin or undefined if it does not begin with expected string.
  */
-function beginsWith(begin, whole, otherwise) {
-  return whole.indexOf(begin) == 0 ? whole.substr(begin.length) : otherwise;
+function beginsWith(begin, whole) {
+  if (whole.indexOf(begin) == 0) {
+    return whole.substr(begin.length);
+  }
 }
 
 
@@ -7444,20 +7596,22 @@ function LocationHtml5Url(appBase, basePrefix) {
   this.$$html5 = true;
   basePrefix = basePrefix || '';
   var appBaseNoFile = stripFile(appBase);
+  parseAbsoluteUrl(appBase, this);
+
+
   /**
    * Parse given html5 (regular) url string into properties
    * @param {string} newAbsoluteUrl HTML5 url
    * @private
    */
   this.$$parse = function(url) {
-    var parsed = {}
-    matchUrl(url, parsed);
     var pathUrl = beginsWith(appBaseNoFile, url);
     if (!isString(pathUrl)) {
       throw $locationMinErr('ipthprfx', 'Invalid url "{0}", missing path prefix "{1}".', url, appBaseNoFile);
     }
-    matchAppUrl(pathUrl, parsed);
-    extend(this, parsed);
+
+    parseAppUrl(pathUrl, this);
+
     if (!this.$$path) {
       this.$$path = '/';
     }
@@ -7508,7 +7662,7 @@ function LocationHtml5Url(appBase, basePrefix) {
 function LocationHashbangUrl(appBase, hashPrefix) {
   var appBaseNoFile = stripFile(appBase);
 
-  matchUrl(appBase, this);
+  parseAbsoluteUrl(appBase, this);
 
 
   /**
@@ -7527,7 +7681,7 @@ function LocationHashbangUrl(appBase, hashPrefix) {
     if (!isString(withoutHashUrl)) {
       throw $locationMinErr('ihshprfx', 'Invalid url "{0}", missing hash prefix "{1}".', url, hashPrefix);
     }
-    matchAppUrl(withoutHashUrl, this);
+    parseAppUrl(withoutHashUrl, this);
     this.$$compose();
   };
 
@@ -8134,6 +8288,8 @@ function $LogProvider(){
 }
 
 var $parseMinErr = minErr('$parse');
+var promiseWarningCache = {};
+var promiseWarning;
 
 // Sandboxing Angular Expressions
 // ------------------------------
@@ -8232,8 +8388,8 @@ var ESCAPE = {"n":"\n", "f":"\f", "r":"\r", "t":"\t", "v":"\v", "'":"'", '"':'"'
 /**
  * @constructor
  */
-var Lexer = function (csp) {
-  this.csp = csp;
+var Lexer = function (options) {
+  this.options = options;
 };
 
 Lexer.prototype = {
@@ -8241,6 +8397,7 @@ Lexer.prototype = {
 
   lex: function (text) {
     this.text = text;
+
     this.index = 0;
     this.ch = undefined;
     this.lastCh = ':'; // can start regexp
@@ -8428,12 +8585,12 @@ Lexer.prototype = {
       token.fn = OPERATORS[ident];
       token.json = OPERATORS[ident];
     } else {
-      var getter = getterFn(ident, this.csp, this.text);
+      var getter = getterFn(ident, this.options, this.text);
       token.fn = extend(function(self, locals) {
         return (getter(self, locals));
       }, {
         assign: function(self, value) {
-          return setter(self, ident, value, parser.text);
+          return setter(self, ident, value, parser.text, parser.options);
         }
       });
     }
@@ -8504,10 +8661,10 @@ Lexer.prototype = {
 /**
  * @constructor
  */
-var Parser = function (lexer, $filter, csp) {
+var Parser = function (lexer, $filter, options) {
   this.lexer = lexer;
   this.$filter = $filter;
-  this.csp = csp;
+  this.options = options;
 };
 
 Parser.ZERO = function () { return 0; };
@@ -8521,7 +8678,7 @@ Parser.prototype = {
     //TODO(i): strip all the obsolte json stuff from this file
     this.json = json;
 
-    this.tokens = this.lexer.lex(text, this.csp);
+    this.tokens = this.lexer.lex(text);
 
     if (json) {
       // The extra level of aliasing is here, just in case the lexer misses something, so that
@@ -8821,13 +8978,13 @@ Parser.prototype = {
   fieldAccess: function(object) {
     var parser = this;
     var field = this.expect().text;
-    var getter = getterFn(field, this.csp, this.text);
+    var getter = getterFn(field, this.options, this.text);
 
     return extend(function(scope, locals, self) {
       return getter(self || object(scope, locals), locals);
     }, {
       assign: function(scope, value, locals) {
-        return setter(object(scope, locals), field, value, parser.text);
+        return setter(object(scope, locals), field, value, parser.text, parser.options);
       }
     });
   },
@@ -8845,7 +9002,7 @@ Parser.prototype = {
 
       if (!o) return undefined;
       v = ensureSafeObject(o[i], parser.text);
-      if (v && v.then) {
+      if (v && v.then && parser.options.unwrapPromises) {
         p = v;
         if (!('$$v' in v)) {
           p.$$v = undefined;
@@ -8890,16 +9047,6 @@ Parser.prototype = {
       var v = fnPtr.apply
             ? fnPtr.apply(context, args)
             : fnPtr(args[0], args[1], args[2], args[3], args[4]);
-
-      // Check for promise
-      if (v && v.then) {
-        var p = v;
-        if (!('$$v' in v)) {
-          p.$$v = undefined;
-          p.then(function(val) { p.$$v = val; });
-        }
-        v = v.$$v;
-      }
 
       return ensureSafeObject(v, parser.text);
     };
@@ -8960,7 +9107,7 @@ Parser.prototype = {
       literal: true,
       constant: allConstant
     });
-  },
+  }
 };
 
 
@@ -8968,7 +9115,10 @@ Parser.prototype = {
 // Parser helper functions
 //////////////////////////////////////////////////
 
-function setter(obj, path, setValue, fullExp) {
+function setter(obj, path, setValue, fullExp, options) {
+  //needed?
+  options = options || {};
+
   var element = path.split('.'), key;
   for (var i = 0; element.length > 1; i++) {
     key = ensureSafeMemberName(element.shift(), fullExp);
@@ -8978,7 +9128,8 @@ function setter(obj, path, setValue, fullExp) {
       obj[key] = propertyObj;
     }
     obj = propertyObj;
-    if (obj.then) {
+    if (obj.then && options.unwrapPromises) {
+      promiseWarning(fullExp);
       if (!("$$v" in obj)) {
         (function(promise) {
           promise.then(function(val) { promise.$$v = val; }); }
@@ -9002,76 +9153,103 @@ var getterFnCache = {};
  * - http://jsperf.com/angularjs-parse-getter/4
  * - http://jsperf.com/path-evaluation-simplified/7
  */
-function cspSafeGetterFn(key0, key1, key2, key3, key4, fullExp) {
+function cspSafeGetterFn(key0, key1, key2, key3, key4, fullExp, options) {
   ensureSafeMemberName(key0, fullExp);
   ensureSafeMemberName(key1, fullExp);
   ensureSafeMemberName(key2, fullExp);
   ensureSafeMemberName(key3, fullExp);
   ensureSafeMemberName(key4, fullExp);
-  return function(scope, locals) {
-    var pathVal = (locals && locals.hasOwnProperty(key0)) ? locals : scope,
-        promise;
 
-    if (pathVal === null || pathVal === undefined) return pathVal;
+  return !options.unwrapPromises
+      ? function cspSafeGetter(scope, locals) {
+          var pathVal = (locals && locals.hasOwnProperty(key0)) ? locals : scope;
 
-    pathVal = pathVal[key0];
-    if (pathVal && pathVal.then) {
-      if (!("$$v" in pathVal)) {
-        promise = pathVal;
-        promise.$$v = undefined;
-        promise.then(function(val) { promise.$$v = val; });
-      }
-      pathVal = pathVal.$$v;
-    }
-    if (!key1 || pathVal === null || pathVal === undefined) return pathVal;
+          if (pathVal === null || pathVal === undefined) return pathVal;
+          pathVal = pathVal[key0];
 
-    pathVal = pathVal[key1];
-    if (pathVal && pathVal.then) {
-      if (!("$$v" in pathVal)) {
-        promise = pathVal;
-        promise.$$v = undefined;
-        promise.then(function(val) { promise.$$v = val; });
-      }
-      pathVal = pathVal.$$v;
-    }
-    if (!key2 || pathVal === null || pathVal === undefined) return pathVal;
+          if (!key1 || pathVal === null || pathVal === undefined) return pathVal;
+          pathVal = pathVal[key1];
 
-    pathVal = pathVal[key2];
-    if (pathVal && pathVal.then) {
-      if (!("$$v" in pathVal)) {
-        promise = pathVal;
-        promise.$$v = undefined;
-        promise.then(function(val) { promise.$$v = val; });
-      }
-      pathVal = pathVal.$$v;
-    }
-    if (!key3 || pathVal === null || pathVal === undefined) return pathVal;
+          if (!key2 || pathVal === null || pathVal === undefined) return pathVal;
+          pathVal = pathVal[key2];
 
-    pathVal = pathVal[key3];
-    if (pathVal && pathVal.then) {
-      if (!("$$v" in pathVal)) {
-        promise = pathVal;
-        promise.$$v = undefined;
-        promise.then(function(val) { promise.$$v = val; });
-      }
-      pathVal = pathVal.$$v;
-    }
-    if (!key4 || pathVal === null || pathVal === undefined) return pathVal;
+          if (!key3 || pathVal === null || pathVal === undefined) return pathVal;
+          pathVal = pathVal[key3];
 
-    pathVal = pathVal[key4];
-    if (pathVal && pathVal.then) {
-      if (!("$$v" in pathVal)) {
-        promise = pathVal;
-        promise.$$v = undefined;
-        promise.then(function(val) { promise.$$v = val; });
-      }
-      pathVal = pathVal.$$v;
-    }
-    return pathVal;
-  };
+          if (!key4 || pathVal === null || pathVal === undefined) return pathVal;
+          pathVal = pathVal[key4];
+
+          return pathVal;
+        }
+      : function cspSafePromiseEnabledGetter(scope, locals) {
+          var pathVal = (locals && locals.hasOwnProperty(key0)) ? locals : scope,
+              promise;
+
+          if (pathVal === null || pathVal === undefined) return pathVal;
+
+          pathVal = pathVal[key0];
+          if (pathVal && pathVal.then) {
+            promiseWarning(fullExp);
+            if (!("$$v" in pathVal)) {
+              promise = pathVal;
+              promise.$$v = undefined;
+              promise.then(function(val) { promise.$$v = val; });
+            }
+            pathVal = pathVal.$$v;
+          }
+          if (!key1 || pathVal === null || pathVal === undefined) return pathVal;
+
+          pathVal = pathVal[key1];
+          if (pathVal && pathVal.then) {
+            promiseWarning(fullExp);
+            if (!("$$v" in pathVal)) {
+              promise = pathVal;
+              promise.$$v = undefined;
+              promise.then(function(val) { promise.$$v = val; });
+            }
+            pathVal = pathVal.$$v;
+          }
+          if (!key2 || pathVal === null || pathVal === undefined) return pathVal;
+
+          pathVal = pathVal[key2];
+          if (pathVal && pathVal.then) {
+            promiseWarning(fullExp);
+            if (!("$$v" in pathVal)) {
+              promise = pathVal;
+              promise.$$v = undefined;
+              promise.then(function(val) { promise.$$v = val; });
+            }
+            pathVal = pathVal.$$v;
+          }
+          if (!key3 || pathVal === null || pathVal === undefined) return pathVal;
+
+          pathVal = pathVal[key3];
+          if (pathVal && pathVal.then) {
+            promiseWarning(fullExp);
+            if (!("$$v" in pathVal)) {
+              promise = pathVal;
+              promise.$$v = undefined;
+              promise.then(function(val) { promise.$$v = val; });
+            }
+            pathVal = pathVal.$$v;
+          }
+          if (!key4 || pathVal === null || pathVal === undefined) return pathVal;
+
+          pathVal = pathVal[key4];
+          if (pathVal && pathVal.then) {
+            promiseWarning(fullExp);
+            if (!("$$v" in pathVal)) {
+              promise = pathVal;
+              promise.$$v = undefined;
+              promise.then(function(val) { promise.$$v = val; });
+            }
+            pathVal = pathVal.$$v;
+          }
+          return pathVal;
+        }
 }
 
-function getterFn(path, csp, fullExp) {
+function getterFn(path, options, fullExp) {
   // Check whether the cache has this getter already.
   // We can use hasOwnProperty directly on the cache because we ensure,
   // see below, that the cache never stores a path called 'hasOwnProperty'
@@ -9083,14 +9261,14 @@ function getterFn(path, csp, fullExp) {
       pathKeysLength = pathKeys.length,
       fn;
 
-  if (csp) {
+  if (options.csp) {
     fn = (pathKeysLength < 6)
-        ? cspSafeGetterFn(pathKeys[0], pathKeys[1], pathKeys[2], pathKeys[3], pathKeys[4], fullExp)
+        ? cspSafeGetterFn(pathKeys[0], pathKeys[1], pathKeys[2], pathKeys[3], pathKeys[4], fullExp, options)
         : function(scope, locals) {
           var i = 0, val;
           do {
             val = cspSafeGetterFn(
-                    pathKeys[i++], pathKeys[i++], pathKeys[i++], pathKeys[i++], pathKeys[i++], fullExp
+                    pathKeys[i++], pathKeys[i++], pathKeys[i++], pathKeys[i++], pathKeys[i++], fullExp, options
                   )(scope, locals);
 
             locals = undefined; // clear after first iteration
@@ -9109,18 +9287,25 @@ function getterFn(path, csp, fullExp) {
                       ? 's'
                       // but if we are first then we check locals first, and if so read it first
                       : '((k&&k.hasOwnProperty("' + key + '"))?k:s)') + '["' + key + '"]' + ';\n' +
-              'if (s && s.then) {\n' +
-                ' if (!("$$v" in s)) {\n' +
-                  ' p=s;\n' +
-                  ' p.$$v = undefined;\n' +
-                  ' p.then(function(v) {p.$$v=v;});\n' +
-                  '}\n' +
-                ' s=s.$$v\n' +
-              '}\n';
+              (options.unwrapPromises
+                ? 'if (s && s.then) {\n' +
+                  ' pw("' + fullExp.replace(/\"/g, '\\"') + '");\n' +
+                  ' if (!("$$v" in s)) {\n' +
+                    ' p=s;\n' +
+                    ' p.$$v = undefined;\n' +
+                    ' p.then(function(v) {p.$$v=v;});\n' +
+                    '}\n' +
+                  ' s=s.$$v\n' +
+                '}\n'
+                : '');
     });
     code += 'return s;';
-    fn = Function('s', 'k', code); // s=scope, k=locals
-    fn.toString = function() { return code; };
+
+    var evaledFnGetter = Function('s', 'k', 'pw', code); // s=scope, k=locals, pw=promiseWarning
+    evaledFnGetter.toString = function() { return code; };
+    fn = function(scope, locals) {
+      return evaledFnGetter(scope, locals, promiseWarning);
+    };
   }
 
   // Only cache the value if it's not going to mess up the cache object
@@ -9172,20 +9357,125 @@ function getterFn(path, csp, fullExp) {
  *        set to a function to change its value on the given context.
  *
  */
+
+
+/**
+ * @ngdoc object
+ * @name ng.$parseProvider
+ * @function
+ *
+ * @description
+ * `$parseProvider` can be used for configuring the default behavior of the {@link ng.$parse $parse} service.
+ */
 function $ParseProvider() {
   var cache = {};
-  this.$get = ['$filter', '$sniffer', function($filter, $sniffer) {
+
+  var $parseOptions = {
+    csp: false,
+    unwrapPromises: false,
+    logPromiseWarnings: true
+  };
+
+
+  /**
+   * @deprecated Promise unwrapping via $parse is deprecated and will be removed in the future.
+   *
+   * @ngdoc method
+   * @name ng.$parseProvider#unwrapPromises
+   * @methodOf ng.$parseProvider
+   * @description
+   *
+   * **This feature is deprecated, see deprecation notes below for more info**
+   *
+   * If set to true (default is false), $parse will unwrap promises automatically when a promise is found at any part of
+   * the expression. In other words, if set to true, the expression will always result in a non-promise value.
+   *
+   * While the promise is unresolved, it's treated as undefined, but once resolved and fulfilled, the fulfillment value
+   * is used in place of the promise while evaluating the expression.
+   *
+   * **Deprecation notice**
+   *
+   * This is a feature that didn't prove to be wildly useful or popular, primarily because of the dichotomy between data
+   * access in templates (accessed as raw values) and controller code (accessed as promises).
+   *
+   * In most code we ended up resolving promises manually in controllers anyway and thus unifying the model access there.
+   *
+   * Other downsides of automatic promise unwrapping:
+   *
+   * - when building components it's often desirable to receive the raw promises
+   * - adds complexity and slows down expression evaluation
+   * - makes expression code pre-generation unattractive due to the amount of code that needs to be generated
+   * - makes IDE auto-completion and tool support hard
+   *
+   * **Warning Logs**
+   *
+   * If the unwrapping is enabled, Angular will log a warning about each expression that unwraps a promise (to reduce
+   * the noise, each expression is logged only once). To disable this logging use
+   * `$parseProvider.logPromiseWarnings(false)` api.
+   *
+   *
+   * @param {boolean=} value New value.
+   * @returns {boolean|self} Returns the current setting when used as getter and self if used as setter.
+   */
+  this.unwrapPromises = function(value) {
+    if (isDefined(value)) {
+      $parseOptions.unwrapPromises = !!value;
+      return this;
+    } else {
+      return $parseOptions.unwrapPromises;
+    }
+  };
+
+
+  /**
+   * @deprecated Promise unwrapping via $parse is deprecated and will be removed in the future.
+   *
+   * @ngdoc method
+   * @name ng.$parseProvider#logPromiseWarnings
+   * @methodOf ng.$parseProvider
+   * @description
+   *
+   * Controls whether Angular should log a warning on any encounter of a promise in an expression.
+   *
+   * The default is set to `true`.
+   *
+   * This setting applies only if `$parseProvider.unwrapPromises` setting is set to true as well.
+   *
+   * @param {boolean=} value New value.
+   * @returns {boolean|self} Returns the current setting when used as getter and self if used as setter.
+   */
+ this.logPromiseWarnings = function(value) {
+    if (isDefined(value)) {
+      $parseOptions.logPromiseWarnings = value;
+      return this;
+    } else {
+      return $parseOptions.logPromiseWarnings;
+    }
+  };
+
+
+  this.$get = ['$filter', '$sniffer', '$log', function($filter, $sniffer, $log) {
+    $parseOptions.csp = $sniffer.csp;
+
+    promiseWarning = function promiseWarningFn(fullExp) {
+      if (!$parseOptions.logPromiseWarnings || promiseWarningCache.hasOwnProperty(fullExp)) return;
+      promiseWarningCache[fullExp] = true;
+      $log.warn('[$parse] Promise found in the expression `' + fullExp + '`. ' +
+          'Automatic unwrapping of promises in Angular expressions is deprecated.');
+    };
+
     return function(exp) {
       var parsedExpression;
 
       switch (typeof exp) {
         case 'string':
+
           if (cache.hasOwnProperty(exp)) {
             return cache[exp];
           }
 
-          var lexer = new Lexer($sniffer.csp);
-          var parser = new Parser(lexer, $filter, $sniffer.csp);
+          var lexer = new Lexer($parseOptions);
+          var parser = new Parser(lexer, $filter, $parseOptions);
           parsedExpression = parser.parse(exp, false);
 
           if (exp !== 'hasOwnProperty') {
@@ -10830,7 +11120,7 @@ function adjustMatchers(matchers) {
  *      // The blacklist overrides the whitelist so the open redirect here is blocked.
  *      $sceDelegateProvider.resourceUrlBlacklist([
  *        'http://myapp.example.com/clickThru**']);
- *      }); 
+ *      });
  * </pre>
  */
 
@@ -10906,8 +11196,8 @@ function $SceDelegateProvider() {
     return resourceUrlBlacklist;
   };
 
-  this.$get = ['$log', '$document', '$injector', '$$urlUtils', function(
-                $log,   $document,   $injector,   $$urlUtils) {
+  this.$get = ['$log', '$document', '$injector', function(
+                $log,   $document,   $injector) {
 
     var htmlSanitizer = function htmlSanitizer(html) {
       throw $sceMinErr('unsafe', 'Attempting to use an unsafe value in a safe context.');
@@ -10920,7 +11210,7 @@ function $SceDelegateProvider() {
 
     function matchUrl(matcher, parsedUrl) {
       if (matcher === 'self') {
-        return $$urlUtils.isSameOrigin(parsedUrl);
+        return urlIsSameOrigin(parsedUrl);
       } else {
         // definitely a regex.  See adjustMatchers()
         return !!matcher.exec(parsedUrl.href);
@@ -10928,7 +11218,7 @@ function $SceDelegateProvider() {
     }
 
     function isResourceUrlAllowedByPolicy(url) {
-      var parsedUrl = $$urlUtils.resolve(url.toString(), true);
+      var parsedUrl = urlResolve(url.toString());
       var i, n, allowed = false;
       // Ensure that at least one item from the whitelist allows this url.
       for (i = 0, n = resourceUrlWhitelist.length; i < n; i++) {
@@ -12019,122 +12309,104 @@ function $TimeoutProvider() {
   }];
 }
 
-function $$UrlUtilsProvider() {
-  this.$get = [function() {
-    var urlParsingNode = document.createElement("a"),
-        // NOTE:  The usage of window and document instead of $window and $document here is
-        // deliberate.  This service depends on the specific behavior of anchor nodes created by the
-        // browser (resolving and parsing URLs) that is unlikely to be provided by mock objects and
-        // cause us to break tests.  In addition, when the browser resolves a URL for XHR, it
-        // doesn't know about mocked locations and resolves URLs to the real document - which is
-        // exactly the behavior needed here.  There is little value is mocking these our for this
-        // service.
-        originUrl = resolve(window.location.href, true);
+// NOTE:  The usage of window and document instead of $window and $document here is
+// deliberate.  This service depends on the specific behavior of anchor nodes created by the
+// browser (resolving and parsing URLs) that is unlikely to be provided by mock objects and
+// cause us to break tests.  In addition, when the browser resolves a URL for XHR, it
+// doesn't know about mocked locations and resolves URLs to the real document - which is
+// exactly the behavior needed here.  There is little value is mocking these out for this
+// service.
+var urlParsingNode = document.createElement("a");
+var originUrl = urlResolve(window.location.href, true);
 
-    /**
-     * @description
-     * Normalizes and optionally parses a URL.
-     *
-     * NOTE:  This is a private service.  The API is subject to change unpredictably in any commit.
-     *
-     * Implementation Notes for non-IE browsers
-     * ----------------------------------------
-     * Assigning a URL to the href property of an anchor DOM node, even one attached to the DOM,
-     * results both in the normalizing and parsing of the URL.  Normalizing means that a relative
-     * URL will be resolved into an absolute URL in the context of the application document.
-     * Parsing means that the anchor node's host, hostname, protocol, port, pathname and related
-     * properties are all populated to reflect the normalized URL.  This approach has wide
-     * compatibility - Safari 1+, Mozilla 1+, Opera 7+,e etc.  See
-     * http://www.aptana.com/reference/html/api/HTMLAnchorElement.html
-     *
-     * Implementation Notes for IE
-     * ---------------------------
-     * IE >= 8 and <= 10 normalizes the URL when assigned to the anchor node similar to the other
-     * browsers.  However, the parsed components will not be set if the URL assigned did not specify
-     * them.  (e.g. if you assign a.href = "foo", then a.protocol, a.host, etc. will be empty.)  We
-     * work around that by performing the parsing in a 2nd step by taking a previously normalized
-     * URL (e.g. by assining to a.href) and assigning it a.href again.  This correctly populates the
-     * properties such as protocol, hostname, port, etc.
-     *
-     * IE7 does not normalize the URL when assigned to an anchor node.  (Apparently, it does, if one
-     * uses the inner HTML approach to assign the URL as part of an HTML snippet -
-     * http://stackoverflow.com/a/472729)  However, setting img[src] does normalize the URL.
-     * Unfortunately, setting img[src] to something like "javascript:foo" on IE throws an exception.
-     * Since the primary usage for normalizing URLs is to sanitize such URLs, we can't use that
-     * method and IE < 8 is unsupported.
-     *
-     * References:
-     *   http://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement
-     *   http://www.aptana.com/reference/html/api/HTMLAnchorElement.html
-     *   http://url.spec.whatwg.org/#urlutils
-     *   https://github.com/angular/angular.js/pull/2902
-     *   http://james.padolsey.com/javascript/parsing-urls-with-the-dom/
-     *
-     * @param {string} url The URL to be parsed.
-     * @param {boolean=} parse When true, returns an object for the parsed URL.  Otherwise, returns
-     *   a single string that is the normalized URL.
-     * @returns {object|string} When parse is true, returns the normalized URL as a string.
-     * Otherwise, returns an object with the following members.
-     *
-     *   | member name   | Description    |
-     *   |---------------|----------------|
-     *   | href          | A normalized version of the provided URL if it was not an absolute URL |
-     *   | protocol      | The protocol including the trailing colon                              |
-     *   | host          | The host and port (if the port is non-default) of the normalizedUrl    |
-     *
-     * These fields from the UrlUtils interface are currently not needed and hence not returned.
-     *
-     *   | member name   | Description    |
-     *   |---------------|----------------|
-     *   | hostname      | The host without the port of the normalizedUrl                         |
-     *   | pathname      | The path following the host in the normalizedUrl                       |
-     *   | hash          | The URL hash if present                                                |
-     *   | search        | The query string                                                       |
-     *
-     */
-    function resolve(url, parse) {
-      var href = url;
-      if (msie <= 11) {
-        // Normalize before parse.  Refer Implementation Notes on why this is
-        // done in two steps on IE.
-        urlParsingNode.setAttribute("href", href);
-        href = urlParsingNode.href;
-      }
-      urlParsingNode.setAttribute('href', href);
+/**
+ *
+ * Implementation Notes for non-IE browsers
+ * ----------------------------------------
+ * Assigning a URL to the href property of an anchor DOM node, even one attached to the DOM,
+ * results both in the normalizing and parsing of the URL.  Normalizing means that a relative
+ * URL will be resolved into an absolute URL in the context of the application document.
+ * Parsing means that the anchor node's host, hostname, protocol, port, pathname and related
+ * properties are all populated to reflect the normalized URL.  This approach has wide
+ * compatibility - Safari 1+, Mozilla 1+, Opera 7+,e etc.  See
+ * http://www.aptana.com/reference/html/api/HTMLAnchorElement.html
+ *
+ * Implementation Notes for IE
+ * ---------------------------
+ * IE >= 8 and <= 10 normalizes the URL when assigned to the anchor node similar to the other
+ * browsers.  However, the parsed components will not be set if the URL assigned did not specify
+ * them.  (e.g. if you assign a.href = "foo", then a.protocol, a.host, etc. will be empty.)  We
+ * work around that by performing the parsing in a 2nd step by taking a previously normalized
+ * URL (e.g. by assining to a.href) and assigning it a.href again.  This correctly populates the
+ * properties such as protocol, hostname, port, etc.
+ *
+ * IE7 does not normalize the URL when assigned to an anchor node.  (Apparently, it does, if one
+ * uses the inner HTML approach to assign the URL as part of an HTML snippet -
+ * http://stackoverflow.com/a/472729)  However, setting img[src] does normalize the URL.
+ * Unfortunately, setting img[src] to something like "javascript:foo" on IE throws an exception.
+ * Since the primary usage for normalizing URLs is to sanitize such URLs, we can't use that
+ * method and IE < 8 is unsupported.
+ *
+ * References:
+ *   http://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement
+ *   http://www.aptana.com/reference/html/api/HTMLAnchorElement.html
+ *   http://url.spec.whatwg.org/#urlutils
+ *   https://github.com/angular/angular.js/pull/2902
+ *   http://james.padolsey.com/javascript/parsing-urls-with-the-dom/
+ *
+ * @function
+ * @param {string} url The URL to be parsed.
+ * @description Normalizes and parses a URL.
+ * @returns {object} Returns the normalized URL as a dictionary.
+ *
+ *   | member name   | Description    |
+ *   |---------------|----------------|
+ *   | href          | A normalized version of the provided URL if it was not an absolute URL |
+ *   | protocol      | The protocol including the trailing colon                              |
+ *   | host          | The host and port (if the port is non-default) of the normalizedUrl    |
+ *   | search        | The search params, minus the question mark                             |
+ *   | hash          | The hash string, minus the hash symbol
+ *   | hostname      | The hostname
+ *   | port          | The port, without ":"
+ *   | pathname      | The pathname, beginning with "/"
+ *
+ */
+function urlResolve(url) {
+  var href = url;
+  if (msie) {
+    // Normalize before parse.  Refer Implementation Notes on why this is
+    // done in two steps on IE.
+    urlParsingNode.setAttribute("href", href);
+    href = urlParsingNode.href;
+  }
 
-      if (!parse) {
-        return urlParsingNode.href;
-      }
-      // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
-      return {
-        href: urlParsingNode.href,
-        protocol: urlParsingNode.protocol,
-        host: urlParsingNode.host
-        // Currently unused and hence commented out.
-        // hostname: urlParsingNode.hostname,
-        // port: urlParsingNode.port,
-        // pathname: urlParsingNode.pathname,
-        // hash: urlParsingNode.hash,
-        // search: urlParsingNode.search
-      };
-    }
+  urlParsingNode.setAttribute('href', href);
 
-    return {
-      resolve: resolve,
-      /**
-       * Parse a request URL and determine whether this is a same-origin request as the application document.
-       *
-       * @param {string|object} requestUrl The url of the request as a string that will be resolved
-       * or a parsed URL object.
-       * @returns {boolean} Whether the request is for the same origin as the application document.
-       */
-      isSameOrigin: function isSameOrigin(requestUrl) {
-        var parsed = (typeof requestUrl === 'string') ? resolve(requestUrl, true) : requestUrl;
-        return (parsed.protocol === originUrl.protocol &&
-                parsed.host === originUrl.host);
-      }
-    };
-  }];
+  // $$urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
+  return {
+    href: urlParsingNode.href,
+    protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
+    host: urlParsingNode.host,
+    search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
+    hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
+    hostname: urlParsingNode.hostname,
+    port: urlParsingNode.port,
+    pathname: urlParsingNode.pathname && urlParsingNode.pathname.charAt(0) === '/' ? urlParsingNode.pathname : '/' + urlParsingNode.pathname
+  };
+}
+
+
+/**
+ * Parse a request URL and determine whether this is a same-origin request as the application document.
+ *
+ * @param {string|object} requestUrl The url of the request as a string that will be resolved
+ * or a parsed URL object.
+ * @returns {boolean} Whether the request is for the same origin as the application document.
+ */
+function urlIsSameOrigin(requestUrl) {
+  var parsed = (isString(requestUrl)) ? urlResolve(requestUrl) : requestUrl;
+  return (parsed.protocol === originUrl.protocol &&
+          parsed.host === originUrl.host);
 }
 
 /**
@@ -17399,7 +17671,8 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
               trackByIdFn,
               collectionKeys,
               block,       // last object information {scope, element, id}
-              nextBlockOrder = [];
+              nextBlockOrder = [],
+              elementsToRemove;
 
 
           if (isArrayLike(collection)) {
@@ -17451,8 +17724,9 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
             // lastBlockMap is our own object so we don't need to use special hasOwnPropertyFn
             if (lastBlockMap.hasOwnProperty(key)) {
               block = lastBlockMap[key];
-              $animate.leave(block.elements);
-              forEach(block.elements, function(element) { element[NG_REMOVED] = true});
+              elementsToRemove = getBlockElements(block);
+              $animate.leave(elementsToRemove);
+              forEach(elementsToRemove, function(element) { element[NG_REMOVED] = true; });
               block.scope.$destroy();
             }
           }
@@ -17462,6 +17736,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
             key = (collection === collectionKeys) ? index : collectionKeys[index];
             value = collection[key];
             block = nextBlockOrder[index];
+            if (nextBlockOrder[index - 1]) previousNode = nextBlockOrder[index - 1].endNode;
 
             if (block.startNode) {
               // if we have already seen this object, then we need to reuse the
@@ -17477,7 +17752,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
                 // do nothing
               } else {
                 // existing item which got moved
-                $animate.move(block.elements, null, jqLite(previousNode));
+                $animate.move(getBlockElements(block), null, jqLite(previousNode));
               }
               previousNode = block.endNode;
             } else {
@@ -17495,11 +17770,11 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
 
             if (!block.startNode) {
               linker(childScope, function(clone) {
+                clone[clone.length++] = document.createComment(' end ngRepeat: ' + expression + ' ');
                 $animate.enter(clone, null, jqLite(previousNode));
                 previousNode = clone;
                 block.scope = childScope;
-                block.startNode = clone[0];
-                block.elements = clone;
+                block.startNode = previousNode && previousNode.endNode ? previousNode.endNode : clone[0];
                 block.endNode = clone[clone.length - 1];
                 nextBlockMap[block.id] = block;
               });
@@ -17510,6 +17785,23 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
       };
     }
   };
+
+  function getBlockElements(block) {
+    if (block.startNode === block.endNode) {
+      return jqLite(block.startNode);
+    }
+
+    var element = block.startNode;
+    var elements = [element];
+
+    do {
+      element = element.nextSibling;
+      if (!element) break;
+      elements.push(element);
+    } while (element !== block.endNode);
+
+    return jqLite(elements);
+  }
 }];
 
 /**

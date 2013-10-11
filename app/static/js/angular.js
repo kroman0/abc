@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-0727260
+ * @license AngularJS v1.2.0-c317a7b
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -1601,7 +1601,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-0727260',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-c317a7b',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -3564,8 +3564,8 @@ var $AnimateProvider = ['$provide', function($provide) {
      * @name ng.$animate
      *
      * @description
-     * The $animate service provides rudimentary DOM manipulation functions to insert, remove, move elements within
-     * the DOM as well as adding and removing classes. This service is the core service used by the ngAnimate $animator
+     * The $animate service provides rudimentary DOM manipulation functions to insert, remove and move elements within
+     * the DOM, as well as adding and removing classes. This service is the core service used by the ngAnimate $animator
      * service which provides high-level animation hooks for CSS and JavaScript. 
      *
      * $animate is available in the AngularJS core, however, the ngAnimate module must be included to enable full out
@@ -3632,7 +3632,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @param {jQuery/jqLite element} element the element which will be moved around within the DOM
        * @param {jQuery/jqLite element} parent the parent element where the element will be inserted into (if the after element is not present)
        * @param {jQuery/jqLite element} after the sibling element where the element will be positioned next to
-       * @param {function=} done the callback function (if provided) that will be fired after the element has been moved to it's new position
+       * @param {function=} done the callback function (if provided) that will be fired after the element has been moved to its new position
        */
       move : function(element, parent, after, done) {
         // Do not remove element before insert. Removing will cause data associated with the
@@ -17116,8 +17116,15 @@ var ngIncludeDirective = ['$http', '$templateCache', '$anchorScroll', '$compile'
  * @restrict AC
  *
  * @description
- * The `ngInit` directive specifies initialization tasks to be executed
- *  before the template enters execution mode during bootstrap.
+ * The `ngInit` directive allows you to evaluate an expression in the
+ * current scope.
+ *
+ * <div class="alert alert-error">
+ * The only appropriate use of `ngInit` for aliasing special properties of
+ * {@link api/ng.directive:ngRepeat `ngRepeat`}, as seen in the demo bellow. Besides this case, you
+ * should use {@link guide/dev_guide.mvc.understanding_controller controllers} rather than `ngInit`
+ * to initialize values on a scope.
+ * </div>
  *
  * @element ANY
  * @param {expression} ngInit {@link guide/expression Expression} to eval.
@@ -17125,14 +17132,26 @@ var ngIncludeDirective = ['$http', '$templateCache', '$anchorScroll', '$compile'
  * @example
    <doc:example>
      <doc:source>
-    <div ng-init="greeting='Hello'; person='World'">
-      {{greeting}} {{person}}!
-    </div>
+   <script>
+     function Ctrl($scope) {
+       $scope.list = [['a', 'b'], ['c', 'd']];
+     }
+   </script>
+   <div ng-controller="Ctrl">
+     <div ng-repeat="innerList in list" ng-init="outerIndex = $index">
+       <div ng-repeat="value in innerList" ng-init="innerIndex = $index">
+          <span class="example-init">list[ {{outerIndex}} ][ {{innerIndex}} ] = {{value}};</span>
+       </div>
+     </div>
+   </div>
      </doc:source>
      <doc:scenario>
-       it('should check greeting', function() {
-         expect(binding('greeting')).toBe('Hello');
-         expect(binding('person')).toBe('World');
+       it('should alias index positions', function() {
+         expect(element('.example-init').text())
+           .toBe('list[ 0 ][ 0 ] = a;' +
+                 'list[ 0 ][ 1 ] = b;' +
+                 'list[ 1 ][ 0 ] = c;' +
+                 'list[ 1 ][ 1 ] = d;');
        });
      </doc:scenario>
    </doc:example>

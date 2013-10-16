@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-7566215
+ * @license AngularJS v1.2.0-dba566a
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -640,6 +640,7 @@ ngRouteModule.directive('ngView', ngViewFactory);
  * The enter and leave animation occur concurrently.
  *
  * @scope
+ * @priority 400
  * @example
     <example module="ngViewExample" deps="angular-route.js" animations="true">
       <file name="index.html">

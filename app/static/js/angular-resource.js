@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-dba566a
+ * @license AngularJS v1.2.0-08f376f
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -63,7 +63,7 @@ var $resourceMinErr = angular.$$minErr('$resource');
  *
  * @param {Object.<Object>=} actions Hash with declaration of custom action that should extend the
  *   default set of resource actions. The declaration should be created in the format of {@link
- *   ng.$http#Parameters $http.config}:
+ *   ng.$http#usage_parameters $http.config}:
  *
  *       {action1: {method:?, params:?, isArray:?, headers:?, ...},
  *        action2: {method:?, params:?, isArray:?, headers:?, ...},

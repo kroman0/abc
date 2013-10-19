@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-dba566a
+ * @license AngularJS v1.2.0-08f376f
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -839,6 +839,13 @@ function equals(o1, o2) {
 }
 
 
+function csp() {
+  return (document.securityPolicy && document.securityPolicy.isActive) ||
+      (document.querySelector &&
+      !!(document.querySelector('[ng-csp]') || document.querySelector('[data-ng-csp]')));
+}
+
+
 function concat(array1, array2, index) {
   return array1.concat(slice.call(array2, index));
 }
@@ -1362,7 +1369,7 @@ function setupModuleLoader(window) {
      * @param {Array.<string>=} requires If specified then new module is being created. If unspecified then the
      *        the module is being retrieved for further configuration.
      * @param {Function} configFn Optional configuration function for the module. Same as
-     *        {@link angular.Module#config Module#config()}.
+     *        {@link angular.Module#methods_config Module#config()}.
      * @returns {module} new module with the {@link angular.Module} api.
      */
     return function module(name, requires, configFn) {
@@ -1532,7 +1539,7 @@ function setupModuleLoader(window) {
            * @param {Function} directiveFactory Factory function for creating new instance of
            * directives.
            * @description
-           * See {@link ng.$compileProvider#directive $compileProvider.directive()}.
+           * See {@link ng.$compileProvider#methods_directive $compileProvider.directive()}.
            */
           directive: invokeLater('$compileProvider', 'directive'),
 
@@ -1601,7 +1608,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-dba566a',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-08f376f',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
   dot: 0,
@@ -1631,12 +1638,13 @@ function publishExternalAPI(angular){
     'isNumber': isNumber,
     'isElement': isElement,
     'isArray': isArray,
-    '$$minErr': minErr,
     'version': version,
     'isDate': isDate,
     'lowercase': lowercase,
     'uppercase': uppercase,
-    'callbacks': {counter: 0}
+    'callbacks': {counter: 0},
+    '$$minErr': minErr,
+    '$$csp': csp
   });
 
   angularModule = setupModuleLoader(window);
@@ -1664,7 +1672,6 @@ function publishExternalAPI(angular){
             ngClass: ngClassDirective,
             ngClassEven: ngClassEvenDirective,
             ngClassOdd: ngClassOddDirective,
-            ngCsp: ngCspDirective,
             ngCloak: ngCloakDirective,
             ngController: ngControllerDirective,
             ngForm: ngFormDirective,
@@ -2524,7 +2531,7 @@ forEach({
 
   triggerHandler: function(element, eventName, eventData) {
     var eventFns = (JQLiteExpandoStore(element, 'events') || {})[eventName];
-    
+
     eventData = eventData || [];
 
     var event = [{
@@ -2902,26 +2909,26 @@ function annotate(fn) {
  * factories** are functions which, in turn, are created by a **service provider**.
  * The **service providers** are constructor functions. When instantiated they must contain a property
  * called `$get`, which holds the **service factory** function.
- * 
+ *
  * When you request a service, the {@link AUTO.$injector $injector} is responsible for finding the
  * correct **service provider**, instantiating it and then calling its `$get` **service factory**
  * function to get the instance of the **service**.
- * 
+ *
  * Often services have no configuration options and there is no need to add methods to the service
  * provider.  The provider will be no more than a constructor function with a `$get` property. For
  * these cases the {@link AUTO.$provide $provide} service has additional helper methods to register
  * services without specifying a provider.
  *
- * * {@link AUTO.$provide#provider provider(provider)} - registers a **service provider** with the
+ * * {@link AUTO.$provide#methods_provider provider(provider)} - registers a **service provider** with the
  *     {@link AUTO.$injector $injector}
- * * {@link AUTO.$provide#constant constant(obj)} - registers a value/object that can be accessed by
+ * * {@link AUTO.$provide#methods_constant constant(obj)} - registers a value/object that can be accessed by
  *     providers and services.
- * * {@link AUTO.$provide#value value(obj)} - registers a value/object that can only be accessed by
+ * * {@link AUTO.$provide#methods_value value(obj)} - registers a value/object that can only be accessed by
  *     services, not providers.
- * * {@link AUTO.$provide#factory factory(fn)} - registers a service **factory function**, `fn`, that
+ * * {@link AUTO.$provide#methods_factory factory(fn)} - registers a service **factory function**, `fn`, that
  *     will be wrapped in a **service provider** object, whose `$get` property will contain the given
  *     factory function.
- * * {@link AUTO.$provide#service service(class)} - registers a **constructor function**, `class` that
+ * * {@link AUTO.$provide#methods_service service(class)} - registers a **constructor function**, `class` that
  *     will be wrapped in a **service provider** object, whose `$get` property will instantiate a new
  *     object using the given constructor function.
  *
@@ -2936,7 +2943,7 @@ function annotate(fn) {
  *
  * Register a **provider function** with the {@link AUTO.$injector $injector}. Provider functions are
  * constructor functions, whose instances are responsible for "providing" a factory for a service.
- * 
+ *
  * Service provider names start with the name of the service they provide followed by `Provider`.
  * For example, the {@link ng.$log $log} service has a provider called {@link ng.$logProvider $logProvider}.
  *
@@ -2960,7 +2967,7 @@ function annotate(fn) {
  * @example
  *
  * The following example shows how to create a simple event tracking service and register it using
- * {@link AUTO.$provide#provider $provide.provider()}.
+ * {@link AUTO.$provide#methods_provider $provide.provider()}.
  *
  * <pre>
  *  // Define the eventTracker provider
@@ -3040,7 +3047,7 @@ function annotate(fn) {
  * @returns {Object} registered provider instance
  *
  * @example
- * Here is an example of registering a service 
+ * Here is an example of registering a service
  * <pre>
  *   $provide.factory('ping', ['$http', function($http) {
  *     return function ping() {
@@ -3067,7 +3074,7 @@ function annotate(fn) {
  * This is short for registering a service where its provider's `$get` property is the service
  * constructor function that will be used to instantiate the service instance.
  *
- * You should use {@link AUTO.$provide#service $provide.service(class)} if you define your service
+ * You should use {@link AUTO.$provide#methods_service $provide.service(class)} if you define your service
  * as a type/class. This is common when using {@link http://coffeescript.org CoffeeScript}.
  *
  * @param {string} name The name of the instance.
@@ -3075,14 +3082,14 @@ function annotate(fn) {
  * @returns {Object} registered provider instance
  *
  * @example
- * Here is an example of registering a service using {@link AUTO.$provide#service $provide.service(class)}
+ * Here is an example of registering a service using {@link AUTO.$provide#methods_service $provide.service(class)}
  * that is defined as a CoffeeScript class.
  * <pre>
  *   class Ping
  *     constructor: (@$http)->
  *     send: ()=>
  *       @$http.get('/ping')
- *  
+ *
  *   $provide.service('ping', ['$http', Ping])
  * </pre>
  * You would then inject and use this service like this:
@@ -3107,7 +3114,7 @@ function annotate(fn) {
  * Value services are similar to constant services, except that they cannot be injected into a module
  * configuration function (see {@link angular.Module#config}) but they can be overridden by an Angular
  * {@link AUTO.$provide#decorator decorator}.
- * 
+ *
  * @param {string} name The name of the instance.
  * @param {*} value The value.
  * @returns {Object} registered provider instance
@@ -3116,9 +3123,9 @@ function annotate(fn) {
  * Here are some examples of creating value services.
  * <pre>
  *   $provide.constant('ADMIN_USER', 'admin');
- *   
+ *
  *   $provide.constant('RoleLookup', { admin: 0, writer: 1, reader: 2 });
- *   
+ *
  *   $provide.constant('halfOf', function(value) {
  *     return value / 2;
  *   });
@@ -3145,9 +3152,9 @@ function annotate(fn) {
  * Here a some examples of creating constants:
  * <pre>
  *   $provide.constant('SHARD_HEIGHT', 306);
- *   
+ *
  *   $provide.constant('MY_COLOURS', ['red', 'blue', 'grey']);
- *   
+ *
  *   $provide.constant('double', function(value) {
  *     return value * 2;
  *   });
@@ -3385,7 +3392,7 @@ function createInjector(modulesToLoad) {
       instance = new Constructor();
       returnedValue = invoke(Type, instance, locals);
 
-      return isObject(returnedValue) ? returnedValue : instance;
+      return isObject(returnedValue) || isFunction(returnedValue) ? returnedValue : instance;
     }
 
     return {
@@ -4345,7 +4352,7 @@ function $TemplateCacheProvider() {
  * can then be used to link {@link ng.$rootScope.Scope scope} and the template together.
  *
  * The compilation is a process of walking the DOM tree and trying to match DOM elements to
- * {@link ng.$compileProvider#directive directives}. For each match it
+ * {@link ng.$compileProvider#methods_directive directives}. For each match it
  * executes corresponding template function and collects the
  * instance functions into a single template function which is then returned.
  *
@@ -5834,7 +5841,7 @@ function directiveLinkingFn(
  * controllers.
  *
  * This provider allows controller registration via the
- * {@link ng.$controllerProvider#register register} method.
+ * {@link ng.$controllerProvider#methods_register register} method.
  */
 function $ControllerProvider() {
   var controllers = {},
@@ -6232,12 +6239,12 @@ function $HttpProvider() {
      *
      * Complete list of shortcut methods:
      *
-     * - {@link ng.$http#get $http.get}
-     * - {@link ng.$http#head $http.head}
-     * - {@link ng.$http#post $http.post}
-     * - {@link ng.$http#put $http.put}
-     * - {@link ng.$http#delete $http.delete}
-     * - {@link ng.$http#jsonp $http.jsonp}
+     * - {@link ng.$http#methods_get $http.get}
+     * - {@link ng.$http#methods_head $http.head}
+     * - {@link ng.$http#methods_post $http.post}
+     * - {@link ng.$http#methods_put $http.put}
+     * - {@link ng.$http#methods_delete $http.delete}
+     * - {@link ng.$http#methods_jsonp $http.jsonp}
      *
      *
      * # Setting HTTP Headers
@@ -7243,7 +7250,7 @@ function $InterpolateProvider() {
      *    embedded expression in order to return an interpolation function. Strings with no
      *    embedded expression will return null for the interpolation function.
      * @param {string=} trustedContext when provided, the returned function passes the interpolated
-     *    result through {@link ng.$sce#getTrusted $sce.getTrusted(interpolatedResult,
+     *    result through {@link ng.$sce#methods_getTrusted $sce.getTrusted(interpolatedResult,
      *    trustedContext)} before returning it.  Refer to the {@link ng.$sce $sce} service that
      *    provides Strict Contextual Escaping for details.
      * @returns {function(context)} an interpolation function which is used to compute the interpolated
@@ -7389,7 +7396,7 @@ function $IntervalProvider() {
       * number of iterations that have run.
       * To cancel an interval, call `$interval.cancel(promise)`.
       *
-      * In tests you can use {@link ngMock.$interval#flush `$interval.flush(millis)`} to
+      * In tests you can use {@link ngMock.$interval#methods_flush `$interval.flush(millis)`} to
       * move forward by `millis` milliseconds and trigger any functions scheduled to run in that
       * time.
       *
@@ -7398,7 +7405,7 @@ function $IntervalProvider() {
       * @param {number=} [count=0] Number of times to repeat. If not set, or 0, will repeat
       *   indefinitely.
       * @param {boolean=} [invokeApply=true] If set to `false` skips model dirty checking, otherwise
-      *   will invoke `fn` within the {@link ng.$rootScope.Scope#$apply $apply} block.
+      *   will invoke `fn` within the {@link ng.$rootScope.Scope#methods_$apply $apply} block.
       * @returns {promise} A promise which will be notified on each iteration.
       */
     function interval(fn, delay, count, invokeApply) {
@@ -10116,7 +10123,7 @@ function $RootScopeProvider(){
      * @description
      * A root scope can be retrieved using the {@link ng.$rootScope $rootScope} key from the
      * {@link AUTO.$injector $injector}. Child scopes are created using the
-     * {@link ng.$rootScope.Scope#$new $new()} method. (Most scopes are created automatically when
+     * {@link ng.$rootScope.Scope#methods_$new $new()} method. (Most scopes are created automatically when
      * compiled HTML template is executed.)
      *
      * Here is a simple scope snippet to show how you can interact with the scope.
@@ -10497,9 +10504,9 @@ function $RootScopeProvider(){
        *
        * Usually, you don't call `$digest()` directly in
        * {@link ng.directive:ngController controllers} or in
-       * {@link ng.$compileProvider#directive directives}.
+       * {@link ng.$compileProvider#methods_directive directives}.
        * Instead, you should call {@link ng.$rootScope.Scope#$apply $apply()} (typically from within a
-       * {@link ng.$compileProvider#directive directives}), which will force a `$digest()`.
+       * {@link ng.$compileProvider#methods_directive directives}), which will force a `$digest()`.
        *
        * If you want to be notified whenever `$digest()` is called,
        * you can register a `watchExpression` function with {@link ng.$rootScope.Scope#$watch $watch()}
@@ -11105,9 +11112,9 @@ function adjustMatchers(matchers) {
  * can override it completely to change the behavior of `$sce`, the common case would
  * involve configuring the {@link ng.$sceDelegateProvider $sceDelegateProvider} instead by setting
  * your own whitelists and blacklists for trusting URLs used for loading AngularJS resources such as
- * templates.  Refer {@link ng.$sceDelegateProvider#resourceUrlWhitelist
+ * templates.  Refer {@link ng.$sceDelegateProvider#methods_resourceUrlWhitelist
  * $sceDelegateProvider.resourceUrlWhitelist} and {@link
- * ng.$sceDelegateProvider#resourceUrlBlacklist $sceDelegateProvider.resourceUrlBlacklist}
+ * ng.$sceDelegateProvider#methods_resourceUrlBlacklist $sceDelegateProvider.resourceUrlBlacklist}
  */
 
 /**
@@ -11118,8 +11125,8 @@ function adjustMatchers(matchers) {
  * The `$sceDelegateProvider` provider allows developers to configure the {@link ng.$sceDelegate
  * $sceDelegate} service.  This allows one to get/set the whitelists and blacklists used to ensure
  * that the URLs used for sourcing Angular templates are safe.  Refer {@link
- * ng.$sceDelegateProvider#resourceUrlWhitelist $sceDelegateProvider.resourceUrlWhitelist} and
- * {@link ng.$sceDelegateProvider#resourceUrlBlacklist $sceDelegateProvider.resourceUrlBlacklist}
+ * ng.$sceDelegateProvider#methods_resourceUrlWhitelist $sceDelegateProvider.resourceUrlWhitelist} and
+ * {@link ng.$sceDelegateProvider#methods_resourceUrlBlacklist $sceDelegateProvider.resourceUrlBlacklist}
  *
  * For the general details about this service in Angular, read the main page for {@link ng.$sce
  * Strict Contextual Escaping (SCE)}.
@@ -11333,16 +11340,16 @@ function $SceDelegateProvider() {
      * @methodOf ng.$sceDelegate
      *
      * @description
-     * If the passed parameter had been returned by a prior call to {@link ng.$sceDelegate#trustAs
+     * If the passed parameter had been returned by a prior call to {@link ng.$sceDelegate#methods_trustAs
      * `$sceDelegate.trustAs`}, returns the value that had been passed to {@link
-     * ng.$sceDelegate#trustAs `$sceDelegate.trustAs`}.
+     * ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs`}.
      *
      * If the passed parameter is not a value that had been returned by {@link
-     * ng.$sceDelegate#trustAs `$sceDelegate.trustAs`}, returns it as-is.
+     * ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs`}, returns it as-is.
      *
-     * @param {*} value The result of a prior {@link ng.$sceDelegate#trustAs `$sceDelegate.trustAs`}
+     * @param {*} value The result of a prior {@link ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs`}
      *      call or anything else.
-     * @returns {*} The value the was originally provided to {@link ng.$sceDelegate#trustAs
+     * @returns {*} The value the was originally provided to {@link ng.$sceDelegate#methods_trustAs
      *     `$sceDelegate.trustAs`} if `value` is the result of such a call.  Otherwise, returns `value`
      *     unchanged.
      */
@@ -11360,14 +11367,14 @@ function $SceDelegateProvider() {
      * @methodOf ng.$sceDelegate
      *
      * @description
-     * Takes the result of a {@link ng.$sceDelegate#trustAs `$sceDelegate.trustAs`} call and returns the
+     * Takes the result of a {@link ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs`} call and returns the
      * originally supplied value if the queried context type is a supertype of the created type.  If
      * this condition isn't satisfied, throws an exception.
      *
      * @param {string} type The kind of context in which this value is to be used.
-     * @param {*} maybeTrusted The result of a prior {@link ng.$sceDelegate#trustAs
+     * @param {*} maybeTrusted The result of a prior {@link ng.$sceDelegate#methods_trustAs
      * `$sceDelegate.trustAs`} call.
-     * @returns {*} The value the was originally provided to {@link ng.$sceDelegate#trustAs
+     * @returns {*} The value the was originally provided to {@link ng.$sceDelegate#methods_trustAs
      *     `$sceDelegate.trustAs`} if valid in this context.  Otherwise, throws an exception.
      */
     function getTrusted(type, maybeTrusted) {
@@ -11469,20 +11476,20 @@ function $SceDelegateProvider() {
  * allowing only the files in a specific directory to do this.  Ensuring that the internal API
  * exposed by that code doesn't markup arbitrary values as safe then becomes a more manageable task.
  *
- * In the case of AngularJS' SCE service, one uses {@link ng.$sce#trustAs $sce.trustAs} (and shorthand
- * methods such as {@link ng.$sce#trustAsHtml $sce.trustAsHtml}, etc.) to obtain values that will be
+ * In the case of AngularJS' SCE service, one uses {@link ng.$sce#methods_trustAs $sce.trustAs} (and shorthand
+ * methods such as {@link ng.$sce#methods_trustAsHtml $sce.trustAsHtml}, etc.) to obtain values that will be
  * accepted by SCE / privileged contexts.
  *
  *
  * ## How does it work?
  *
- * In privileged contexts, directives and code will bind to the result of {@link ng.$sce#getTrusted
+ * In privileged contexts, directives and code will bind to the result of {@link ng.$sce#methods_getTrusted
  * $sce.getTrusted(context, value)} rather than to the value directly.  Directives use {@link
- * ng.$sce#parse $sce.parseAs} rather than `$parse` to watch attribute bindings, which performs the
- * {@link ng.$sce#getTrusted $sce.getTrusted} behind the scenes on non-constant literals.
+ * ng.$sce#methods_parse $sce.parseAs} rather than `$parse` to watch attribute bindings, which performs the
+ * {@link ng.$sce#methods_getTrusted $sce.getTrusted} behind the scenes on non-constant literals.
  *
  * As an example, {@link ng.directive:ngBindHtml ngBindHtml} uses {@link
- * ng.$sce#parseAsHtml $sce.parseAsHtml(binding expression)}.  Here's the actual code (slightly
+ * ng.$sce#methods_parseAsHtml $sce.parseAsHtml(binding expression)}.  Here's the actual code (slightly
  * simplified):
  *
  * <pre class="prettyprint">
@@ -11501,10 +11508,10 @@ function $SceDelegateProvider() {
  * `templateUrl`'s specified by {@link guide/directive directives}.
  *
  * By default, Angular only loads templates from the same domain and protocol as the application
- * document.  This is done by calling {@link ng.$sce#getTrustedResourceUrl
+ * document.  This is done by calling {@link ng.$sce#methods_getTrustedResourceUrl
  * $sce.getTrustedResourceUrl} on the template URL.  To load templates from other domains and/or
- * protocols, you may either either {@link ng.$sceDelegateProvider#resourceUrlWhitelist whitelist
- * them} or {@link ng.$sce#trustAsResourceUrl wrap it} into a trusted value.
+ * protocols, you may either either {@link ng.$sceDelegateProvider#methods_resourceUrlWhitelist whitelist
+ * them} or {@link ng.$sce#methods_trustAsResourceUrl wrap it} into a trusted value.
  *
  * *Please note*:
  * The browser's
@@ -11524,20 +11531,21 @@ function $SceDelegateProvider() {
  * `<div ng-html-bind-unsafe="'<b>implicitly trusted</b>'"></div>`) just works.
  *
  * Additionally, `a[href]` and `img[src]` automatically sanitize their URLs and do not pass them
- * through {@link ng.$sce#getTrusted $sce.getTrusted}.  SCE doesn't play a role here.
+ * through {@link ng.$sce#methods_getTrusted $sce.getTrusted}.  SCE doesn't play a role here.
  *
  * The included {@link ng.$sceDelegate $sceDelegate} comes with sane defaults to allow you to load
  * templates in `ng-include` from your application's domain without having to even know about SCE.
  * It blocks loading templates from other domains or loading templates over http from an https
  * served document.  You can change these by setting your own custom {@link
- * ng.$sceDelegateProvider#resourceUrlWhitelist whitelists} and {@link
- * ng.$sceDelegateProvider#resourceUrlBlacklist blacklists} for matching such URLs.
+ * ng.$sceDelegateProvider#methods_resourceUrlWhitelist whitelists} and {@link
+ * ng.$sceDelegateProvider#methods_resourceUrlBlacklist blacklists} for matching such URLs.
  *
  * This significantly reduces the overhead.  It is far easier to pay the small overhead and have an
  * application that's secure and can be audited to verify that with much more ease than bolting
  * security onto an application later.
  *
- * ## What trusted context types are supported?<a name="contexts"></a>
+ * <a name="contexts"></a>
+ * ## What trusted context types are supported?
  *
  * | Context             | Notes          |
  * |---------------------|----------------|
@@ -11547,7 +11555,7 @@ function $SceDelegateProvider() {
  * | `$sce.RESOURCE_URL` | For URLs that are not only safe to follow as links, but whose contens are also safe to include in your application.  Examples include `ng-include`, `src` / `ngSrc` bindings for tags other than `IMG` (e.g. `IFRAME`, `OBJECT`, etc.)  <br><br>Note that `$sce.RESOURCE_URL` makes a stronger statement about the URL than `$sce.URL` does and therefore contexts requiring values trusted for `$sce.RESOURCE_URL` can be used anywhere that values trusted for `$sce.URL` are required. |
  * | `$sce.JS`           | For JavaScript that is safe to execute in your application's context.  Currently unused.  Feel free to use it in your own directives. |
  *
- * ## Format of items in {@link ng.$sceDelegateProvider#resourceUrlWhitelist resourceUrlWhitelist}/{@link ng.$sceDelegateProvider#resourceUrlBlacklist Blacklist} <a name="resourceUrlPatternItem"></a>
+ * ## Format of items in {@link ng.$sceDelegateProvider#methods_resourceUrlWhitelist resourceUrlWhitelist}/{@link ng.$sceDelegateProvider#methods_resourceUrlBlacklist Blacklist} <a name="resourceUrlPatternItem"></a>
  *
  *  Each element in these arrays must be one of the following:
  *
@@ -11592,7 +11600,7 @@ function $SceDelegateProvider() {
  *      Closure library's [goog.string.regExpEscape(s)](
  *      http://docs.closure-library.googlecode.com/git/closure_goog_string_string.js.source.html#line962).
  *
- * Refer {@link ng.$sceDelegateProvider#example $sceDelegateProvider} for an example.
+ * Refer {@link ng.$sceDelegateProvider $sceDelegateProvider} for an example.
  *
  * ## Show me an example using SCE.
  *
@@ -11791,7 +11799,7 @@ function $SceProvider() {
      * @description
      * Converts Angular {@link guide/expression expression} into a function.  This is like {@link
      * ng.$parse $parse} and is identical when the expression is a literal constant.  Otherwise, it
-     * wraps the expression in a call to {@link ng.$sce#getTrusted $sce.getTrusted(*type*,
+     * wraps the expression in a call to {@link ng.$sce#methods_getTrusted $sce.getTrusted(*type*,
      * *result*)}
      *
      * @param {string} type The kind of SCE context in which this result will be used.
@@ -11820,7 +11828,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Delegates to {@link ng.$sceDelegate#trustAs `$sceDelegate.trustAs`}.  As such, returns an object
+     * Delegates to {@link ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs`}.  As such, returns an object
      * that is trusted by angular for use in specified strict contextual escaping contexts (such as
      * ng-html-bind-unsafe, ng-include, any src attribute interpolation, any dom event binding
      * attribute interpolation such as for onclick,  etc.) that uses the provided value.  See *
@@ -11839,13 +11847,13 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.trustAsHtml(value)` → {@link ng.$sceDelegate#trustAs `$sceDelegate.trustAs($sce.HTML, value)`}
+     * Shorthand method.  `$sce.trustAsHtml(value)` → {@link ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs($sce.HTML, value)`}
      *
      * @param {*} value The value to trustAs.
-     * @returns {*} An object that can be passed to {@link ng.$sce#getTrustedHtml
+     * @returns {*} An object that can be passed to {@link ng.$sce#methods_getTrustedHtml
      *     $sce.getTrustedHtml(value)} to obtain the original value.  (privileged directives
      *     only accept expressions that are either literal constants or are the
-     *     return value of {@link ng.$sce#trustAs $sce.trustAs}.)
+     *     return value of {@link ng.$sce#methods_trustAs $sce.trustAs}.)
      */
 
     /**
@@ -11854,13 +11862,13 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.trustAsUrl(value)` → {@link ng.$sceDelegate#trustAs `$sceDelegate.trustAs($sce.URL, value)`}
+     * Shorthand method.  `$sce.trustAsUrl(value)` → {@link ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs($sce.URL, value)`}
      *
      * @param {*} value The value to trustAs.
-     * @returns {*} An object that can be passed to {@link ng.$sce#getTrustedUrl
+     * @returns {*} An object that can be passed to {@link ng.$sce#methods_getTrustedUrl
      *     $sce.getTrustedUrl(value)} to obtain the original value.  (privileged directives
      *     only accept expressions that are either literal constants or are the
-     *     return value of {@link ng.$sce#trustAs $sce.trustAs}.)
+     *     return value of {@link ng.$sce#methods_trustAs $sce.trustAs}.)
      */
 
     /**
@@ -11869,13 +11877,13 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.trustAsResourceUrl(value)` → {@link ng.$sceDelegate#trustAs `$sceDelegate.trustAs($sce.RESOURCE_URL, value)`}
+     * Shorthand method.  `$sce.trustAsResourceUrl(value)` → {@link ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs($sce.RESOURCE_URL, value)`}
      *
      * @param {*} value The value to trustAs.
-     * @returns {*} An object that can be passed to {@link ng.$sce#getTrustedResourceUrl
+     * @returns {*} An object that can be passed to {@link ng.$sce#methods_getTrustedResourceUrl
      *     $sce.getTrustedResourceUrl(value)} to obtain the original value.  (privileged directives
      *     only accept expressions that are either literal constants or are the return
-     *     value of {@link ng.$sce#trustAs $sce.trustAs}.)
+     *     value of {@link ng.$sce#methods_trustAs $sce.trustAs}.)
      */
 
     /**
@@ -11884,13 +11892,13 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.trustAsJs(value)` → {@link ng.$sceDelegate#trustAs `$sceDelegate.trustAs($sce.JS, value)`}
+     * Shorthand method.  `$sce.trustAsJs(value)` → {@link ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs($sce.JS, value)`}
      *
      * @param {*} value The value to trustAs.
-     * @returns {*} An object that can be passed to {@link ng.$sce#getTrustedJs
+     * @returns {*} An object that can be passed to {@link ng.$sce#methods_getTrustedJs
      *     $sce.getTrustedJs(value)} to obtain the original value.  (privileged directives
      *     only accept expressions that are either literal constants or are the
-     *     return value of {@link ng.$sce#trustAs $sce.trustAs}.)
+     *     return value of {@link ng.$sce#methods_trustAs $sce.trustAs}.)
      */
 
     /**
@@ -11899,14 +11907,14 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Delegates to {@link ng.$sceDelegate#getTrusted `$sceDelegate.getTrusted`}.  As such, takes
-     * the result of a {@link ng.$sce#trustAs `$sce.trustAs`}() call and returns the originally supplied
+     * Delegates to {@link ng.$sceDelegate#methods_getTrusted `$sceDelegate.getTrusted`}.  As such, takes
+     * the result of a {@link ng.$sce#methods_trustAs `$sce.trustAs`}() call and returns the originally supplied
      * value if the queried context type is a supertype of the created type.  If this condition
      * isn't satisfied, throws an exception.
      *
      * @param {string} type The kind of context in which this value is to be used.
-     * @param {*} maybeTrusted The result of a prior {@link ng.$sce#trustAs `$sce.trustAs`} call.
-     * @returns {*} The value the was originally provided to {@link ng.$sce#trustAs `$sce.trustAs`} if
+     * @param {*} maybeTrusted The result of a prior {@link ng.$sce#methods_trustAs `$sce.trustAs`} call.
+     * @returns {*} The value the was originally provided to {@link ng.$sce#methods_trustAs `$sce.trustAs`} if
      *     valid in this context.  Otherwise, throws an exception.
      */
 
@@ -11916,7 +11924,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.getTrustedHtml(value)` → {@link ng.$sceDelegate#getTrusted `$sceDelegate.getTrusted($sce.HTML, value)`}
+     * Shorthand method.  `$sce.getTrustedHtml(value)` → {@link ng.$sceDelegate#methods_getTrusted `$sceDelegate.getTrusted($sce.HTML, value)`}
      *
      * @param {*} value The value to pass to `$sce.getTrusted`.
      * @returns {*} The return value of `$sce.getTrusted($sce.HTML, value)`
@@ -11928,7 +11936,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.getTrustedCss(value)` → {@link ng.$sceDelegate#getTrusted `$sceDelegate.getTrusted($sce.CSS, value)`}
+     * Shorthand method.  `$sce.getTrustedCss(value)` → {@link ng.$sceDelegate#methods_getTrusted `$sceDelegate.getTrusted($sce.CSS, value)`}
      *
      * @param {*} value The value to pass to `$sce.getTrusted`.
      * @returns {*} The return value of `$sce.getTrusted($sce.CSS, value)`
@@ -11940,7 +11948,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.getTrustedUrl(value)` → {@link ng.$sceDelegate#getTrusted `$sceDelegate.getTrusted($sce.URL, value)`}
+     * Shorthand method.  `$sce.getTrustedUrl(value)` → {@link ng.$sceDelegate#methods_getTrusted `$sceDelegate.getTrusted($sce.URL, value)`}
      *
      * @param {*} value The value to pass to `$sce.getTrusted`.
      * @returns {*} The return value of `$sce.getTrusted($sce.URL, value)`
@@ -11952,7 +11960,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.getTrustedResourceUrl(value)` → {@link ng.$sceDelegate#getTrusted `$sceDelegate.getTrusted($sce.RESOURCE_URL, value)`}
+     * Shorthand method.  `$sce.getTrustedResourceUrl(value)` → {@link ng.$sceDelegate#methods_getTrusted `$sceDelegate.getTrusted($sce.RESOURCE_URL, value)`}
      *
      * @param {*} value The value to pass to `$sceDelegate.getTrusted`.
      * @returns {*} The return value of `$sce.getTrusted($sce.RESOURCE_URL, value)`
@@ -11964,7 +11972,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.getTrustedJs(value)` → {@link ng.$sceDelegate#getTrusted `$sceDelegate.getTrusted($sce.JS, value)`}
+     * Shorthand method.  `$sce.getTrustedJs(value)` → {@link ng.$sceDelegate#methods_getTrusted `$sceDelegate.getTrusted($sce.JS, value)`}
      *
      * @param {*} value The value to pass to `$sce.getTrusted`.
      * @returns {*} The return value of `$sce.getTrusted($sce.JS, value)`
@@ -11976,7 +11984,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.parseAsHtml(expression string)` → {@link ng.$sce#parse `$sce.parseAs($sce.HTML, value)`}
+     * Shorthand method.  `$sce.parseAsHtml(expression string)` → {@link ng.$sce#methods_parse `$sce.parseAs($sce.HTML, value)`}
      *
      * @param {string} expression String expression to compile.
      * @returns {function(context, locals)} a function which represents the compiled expression:
@@ -11993,7 +12001,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.parseAsCss(value)` → {@link ng.$sce#parse `$sce.parseAs($sce.CSS, value)`}
+     * Shorthand method.  `$sce.parseAsCss(value)` → {@link ng.$sce#methods_parse `$sce.parseAs($sce.CSS, value)`}
      *
      * @param {string} expression String expression to compile.
      * @returns {function(context, locals)} a function which represents the compiled expression:
@@ -12010,7 +12018,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.parseAsUrl(value)` → {@link ng.$sce#parse `$sce.parseAs($sce.URL, value)`}
+     * Shorthand method.  `$sce.parseAsUrl(value)` → {@link ng.$sce#methods_parse `$sce.parseAs($sce.URL, value)`}
      *
      * @param {string} expression String expression to compile.
      * @returns {function(context, locals)} a function which represents the compiled expression:
@@ -12027,7 +12035,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.parseAsResourceUrl(value)` → {@link ng.$sce#parse `$sce.parseAs($sce.RESOURCE_URL, value)`}
+     * Shorthand method.  `$sce.parseAsResourceUrl(value)` → {@link ng.$sce#methods_parse `$sce.parseAs($sce.RESOURCE_URL, value)`}
      *
      * @param {string} expression String expression to compile.
      * @returns {function(context, locals)} a function which represents the compiled expression:
@@ -12044,7 +12052,7 @@ function $SceProvider() {
      * @methodOf ng.$sce
      *
      * @description
-     * Shorthand method.  `$sce.parseAsJs(value)` → {@link ng.$sce#parse `$sce.parseAs($sce.JS, value)`}
+     * Shorthand method.  `$sce.parseAsJs(value)` → {@link ng.$sce#methods_parse `$sce.parseAs($sce.JS, value)`}
      *
      * @param {string} expression String expression to compile.
      * @returns {function(context, locals)} a function which represents the compiled expression:
@@ -12153,7 +12161,7 @@ function $SnifferProvider() {
 
         return eventSupport[event];
       },
-      csp: document.securityPolicy ? document.securityPolicy.isActive : false,
+      csp: csp(),
       vendorPrefix: vendorPrefix,
       transitions : transitions,
       animations : animations
@@ -12188,7 +12196,7 @@ function $TimeoutProvider() {
       * @param {function()} fn A function, whose execution should be delayed.
       * @param {number=} [delay=0] Delay in milliseconds.
       * @param {boolean=} [invokeApply=true] If set to `false` skips model dirty checking, otherwise
-      *   will invoke `fn` within the {@link ng.$rootScope.Scope#$apply $apply} block.
+      *   will invoke `fn` within the {@link ng.$rootScope.Scope#methods_$apply $apply} block.
       * @returns {Promise} Promise that will be resolved when the timeout is reached. The value this
       *   promise will be resolved with is the return value of the `fn` function.
       * 
@@ -15104,7 +15112,7 @@ var VALID_CLASS = 'ng-valid',
        the control reads value from the DOM.  Each function is called, in turn, passing the value
        through to the next. Used to sanitize / convert the value as well as validation.
        For validation, the parsers should update the validity state using
-       {@link ng.directive:ngModel.NgModelController#$setValidity $setValidity()},
+       {@link ng.directive:ngModel.NgModelController#methods_$setValidity $setValidity()},
        and return `undefined` for invalid values.
 
  *
@@ -15285,10 +15293,10 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
    *
    * @description
    * This is called when we need to determine if the value of the input is empty.
-   * 
+   *
    * For instance, the required directive does this to work out if the input has data or not.
    * The default `$isEmpty` function checks whether the value is `undefined`, `''`, `null` or `NaN`.
-   * 
+   *
    * You can override this for input directives whose concept of being empty is different to the
    * default. The `checkboxInputType` directive does this because in its case a value of `false`
    * implies empty.
@@ -15762,8 +15770,8 @@ var ngValueDirective = function() {
  * Typically, you don't use `ngBind` directly, but instead you use the double curly markup like
  * `{{ expression }}` which is similar but less verbose.
  *
- * It is preferrable to use `ngBind` instead of `{{ expression }}` when a template is momentarily 
- * displayed by the browser in its raw state before Angular compiles it. Since `ngBind` is an 
+ * It is preferrable to use `ngBind` instead of `{{ expression }}` when a template is momentarily
+ * displayed by the browser in its raw state before Angular compiles it. Since `ngBind` is an
  * element attribute, it makes the bindings invisible to the user while the page is loading.
  *
  * An alternative solution to this problem would be using the
@@ -15874,7 +15882,7 @@ var ngBindTemplateDirective = ['$interpolate', function($interpolate) {
  * ngSanitize.$sanitize $sanitize} service.  To utilize this functionality, ensure that `$sanitize`
  * is available, for example, by including {@link ngSanitize} in your module's dependencies (not in
  * core Angular.)  You may also bypass sanitization for values you know are safe. To do so, bind to
- * an explicitly trusted value via {@link ng.$sce#trustAsHtml $sce.trustAsHtml}.  See the example
+ * an explicitly trusted value via {@link ng.$sce#methods_trustAsHtml $sce.trustAsHtml}.  See the example
  * under {@link ng.$sce#Example Strict Contextual Escaping (SCE)}.
  *
  * Note: If a `$sanitize` service is unavailable and the bound value isn't explicitly trusted, you
@@ -16433,25 +16441,26 @@ var ngControllerDirective = [function() {
 /**
  * @ngdoc directive
  * @name ng.directive:ngCsp
- * @priority 1000
  *
  * @element html
  * @description
  * Enables [CSP (Content Security Policy)](https://developer.mozilla.org/en/Security/CSP) support.
- * 
+ *
  * This is necessary when developing things like Google Chrome Extensions.
- * 
+ *
  * CSP forbids apps to use `eval` or `Function(string)` generated functions (among other things).
  * For us to be compatible, we just need to implement the "getterFn" in $parse without violating
  * any of these restrictions.
- * 
+ *
  * AngularJS uses `Function(string)` generated functions as a speed optimization. Applying the `ngCsp`
  * directive will cause Angular to use CSP compatibility mode. When this mode is on AngularJS will
  * evaluate all expressions up to 30% slower than in non-CSP mode, but no security violations will
  * be raised.
- * 
+ *
  * In order to use this feature put the `ngCsp` directive on the root element of the application.
- * 
+ *
+ * *Note: This directive is only available in the ng-csp and data-ng-csp attribute form.*
+ *
  * @example
  * This example shows how to apply the `ngCsp` directive to the `html` tag.
    <pre>
@@ -16463,14 +16472,9 @@ var ngControllerDirective = [function() {
    </pre>
  */
 
-var ngCspDirective = ['$sniffer', function($sniffer) {
-  return {
-    priority: 1000,
-    compile: function() {
-      $sniffer.csp = true;
-    }
-  };
-}];
+// ngCsp is not implemented as a proper directive any more, because we need it be processed while we bootstrap
+// the system (before $parse is instantiated), for this reason we just have a csp() fn that looks for ng-csp attribute
+// anywhere in the current doc
 
 /**
  * @ngdoc directive
@@ -16930,10 +16934,10 @@ var ngIfDirective = ['$animate', function($animate) {
  * Fetches, compiles and includes an external HTML fragment.
  *
  * By default, the template URL is restricted to the same domain and protocol as the
- * application document. This is done by calling {@link ng.$sce#getTrustedResourceUrl
+ * application document. This is done by calling {@link ng.$sce#methods_getTrustedResourceUrl
  * $sce.getTrustedResourceUrl} on it. To load templates from other domains or protocols
- * you may either {@link ng.$sceDelegateProvider#resourceUrlWhitelist whitelist them} or
- * {@link ng.$sce#trustAsResourceUrl wrap them} as trusted values. Refer to Angular's {@link
+ * you may either {@link ng.$sceDelegateProvider#methods_resourceUrlWhitelist whitelist them} or
+ * {@link ng.$sce#methods_trustAsResourceUrl wrap them} as trusted values. Refer to Angular's {@link
  * ng.$sce Strict Contextual Escaping}.
  *
  * In addition, the browser's
@@ -19143,4 +19147,4 @@ var styleDirective = valueFn({
   });
 
 })(window, document);
-angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}ng\\:form{display:block;}</style>');
+!angular.$$csp() && angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}ng\\:form{display:block;}</style>');

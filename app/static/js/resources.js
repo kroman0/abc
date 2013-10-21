@@ -4,15 +4,15 @@ factory('Projects', function($resource) {
     return Projects;
 }).
 factory('People', function($resource) {
-    var People = $resource('api/projects.xml');
+    var People = $resource('api/people.xml');
     return People;
 }).
 factory('Todos', function($resource) {
-    var Todos = $resource('api/projects.xml');
+    var Todos = $resource('api/todos.xml');
     return Todos;
 }).
 factory('TimeReport', function($resource) {
-    var TimeReport = $resource('api/projects.xml');
+    var TimeReport = $resource('api/report.xml');
     return TimeReport;
 }).
 factory('Companies', function($resource) {

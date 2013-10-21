@@ -45,7 +45,7 @@ config(function($routeProvider) {
 });
 
 
-function ProjectsCtrl($scope, $routeParams) {
+function ProjectsCtrl($scope) {
     $scope.$root.TITLE = 'Projects';
     $scope.fcompany = $scope.projects.length ? $scope.projects[0].company.id : 0;
     $scope.fstatus = $scope.projects.length ? $scope.projects[0].status : 'active';
@@ -74,14 +74,15 @@ function CompaniesCtrl($scope) {
     $scope.$root.TITLE = 'Companies';
 }
 
-function CompanyCtrl($scope, $routeParams) {
+function CompanyCtrl($scope, $routeParams, $route, $location) {
+    console.log($route, $location);
     var id = $scope.cid = parseInt($routeParams.id, 10),
         fcompany = _.where($scope.companies, {id: id}),
         company = $scope.model = fcompany ? fcompany[0] : $scope.companies[id];
     $scope.$root.TITLE = $scope.title = company && company.name + ' - Companies';
 }
 
-function PeopleCtrl($scope, $routeParams) {
+function PeopleCtrl($scope) {
     $scope.$root.TITLE = 'People';
     $scope.fcompany = $scope.people.length ? $scope.people[0]['company-id'] : 0;
     $scope.setfc = function(cid) {
@@ -96,7 +97,7 @@ function PersonCtrl($scope, $routeParams) {
     $scope.$root.TITLE = $scope.title = person && person['first-name'] + ' ' + person['last-name'] + ' - People';
 }
 
-function MeCtrl($scope, $routeParams) {
+function MeCtrl($scope) {
     var person = $scope.item = $scope.me;
     $scope.$root.TITLE = $scope.title = person && person['first-name'] + ' ' + person['last-name'] + ' - People';
 }
@@ -145,8 +146,18 @@ function TimeReportCtrl($scope, TimeReport) {
     };
 }
 
-function NavCtrl($scope) {
+function NavCtrl($rootScope, $scope, $location) {
+    function updateNavBar(){
+        for(var i in $scope.navitems) {
+            $scope.navitems[i].class = $location.$$path.match('^/'+$scope.navitems[i].id) ? 'active' : '';
+        }
+        for(var i in $scope.dropdownitems) {
+            $scope.dropdownitems[i].class = $location.$$path.match('^/'+$scope.dropdownitems[i].id) ? 'active' : '';
+        }
+    }
+    $rootScope.$on('$locationChangeSuccess', updateNavBar);
     $scope.logged = function(me) {return _.isFinite(me.id)};
+    $scope.path = $location.$$path;
     $scope.navitems = [
         {id: 'projects', title: 'Projects'},
         {id: 'companies', title: 'Companies'},
@@ -154,6 +165,7 @@ function NavCtrl($scope) {
         {id: 'time_report', title: 'Time'},
         {id: 'people', title: 'People'}
     ];
+    updateNavBar();
     $scope.dropdownitems = [
         {id: 'me', icon: 'user', title: 'My profile'},
         {id: 'todos', icon: 'tasks', title: 'My todos'},

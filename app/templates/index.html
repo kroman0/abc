@@ -97,13 +97,13 @@ button.remove {
 </button>
 <a class="brand" href="#">BB</a>
 <ul ng-show="logged(me)" class="nav nav-collapse">
-    <li ng-repeat="item in navitems"><a href="#/{{ item.id }}">{{ item.title }}</a></li>
+    <li class="{{ item.class }}" ng-repeat="item in navitems"><a ng-class="{active: path.match(item.id)}" href="#/{{ item.id }}">{{ item.title }}</a></li>
 </ul>
 <ul class="nav pull-right">
     <li ng-show="logged(me)">
-        <a href="#me"  target="_self" title="{{ me['user-name'] }}" class="dropdown-toggle" data-toggle="dropdown">{{ me['first-name'] }} {{ me['last-name'] }} <span class="caret"></span></a>
+        <a href="#me" target="_self" title="{{ me['user-name'] }}" class="dropdown-toggle" data-toggle="dropdown">{{ me['first-name'] }} {{ me['last-name'] }} <span class="caret"></span></a>
         <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
-            <li ng-repeat="item in dropdownitems"><a href="#/{{ item.id }}"><i class="icon-{{ item.icon }}"></i> {{ item.title }}</a></li>
+            <li class="{{ item.class }}" ng-repeat="item in dropdownitems"><a href="#/{{ item.id }}"><i class="icon-{{ item.icon }}"></i> {{ item.title }}</a></li>
             <li class="divider"></li>
             <li><a href="/logout"><i class="icon-eject"></i> Logout</a></li>
         </ul>

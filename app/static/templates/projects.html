@@ -5,7 +5,7 @@
 <ul class="nav nav-pills">
     <li ng-repeat="status in statuses(projects)"
         ng-class="{'pull-right': true, prstatus: status, active: status==fstatus}">
-        <a ng-href="#projects-{{status}}" data-toggle="tab">{{status}}</a>
+        <a ng-href="#projects-{{status}}" ng-click="setfs(status)" target="_self" data-toggle="tab">{{status}}</a>
     </li>
 </ul>
 <div class="tab-content">
@@ -15,7 +15,7 @@
         <ul class="nav nav-list span4 pull-right">
             <li ng-repeat="cid in companies(projects)"
                 ng-class="{active: fcompany==cid}">
-                <a href="#projects-{{fstatus}}-{{cid}}" data-toggle="tab">{{companyName(projects,cid)}}</a>
+                <a href="#projects-{{fstatus}}-{{cid}}" ng-click="setfc(cid)" target="_self" data-toggle="tab">{{companyName(projects,cid)}}</a>
             </li>
         </ul>
         <div class="tab-content span8">

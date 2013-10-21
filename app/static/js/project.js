@@ -5,10 +5,6 @@ config(function($routeProvider) {
         controller: ProjectsCtrl,
         templateUrl: '/static/templates/projects.html'
     }).
-    when('/projects-:filter', {
-        controller: ProjectsCtrl,
-        templateUrl: '/static/templates/projects.html'
-    }).
     when('/companies', {
         controller: CompaniesCtrl,
         templateUrl: '/static/templates/companies.html'
@@ -54,15 +50,19 @@ config(function($routeProvider) {
 
 
 function ProjectsCtrl($scope, $routeParams) {
-    var filter = $routeParams.filter,
-        pfilter = filter && filter.split('-');
     $scope.$root.TITLE = 'Projects';
-    $scope.fcompany = pfilter ? pfilter[1] : ($scope.projects.length ? $scope.projects[0].company.id : 0);
-    $scope.fstatus = pfilter ? pfilter[0] : ($scope.projects.length ? $scope.projects[0].status : 'active');
+    $scope.fcompany = $scope.projects.length ? $scope.projects[0].company.id : 0;
+    $scope.fstatus = $scope.projects.length ? $scope.projects[0].status : 'active';
     $scope.companyName = function(list, id) {
         return _.first(_.filter(list, function(item) {
             return item.company.id == id;
         })).company.name;
+    };
+    $scope.setfs = function(status) {
+        $scope.fstatus = status
+    };
+    $scope.setfc = function(cid) {
+        $scope.fcompany = cid
     };
     $scope.statuses = function(list) {
         return _.uniq(_.pluck(list, 'status'));

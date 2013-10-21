@@ -55,10 +55,10 @@ function ProjectsCtrl($scope) {
         })).company.name;
     };
     $scope.setfs = function(status) {
-        $scope.fstatus = status
+        $scope.fstatus = status;
     };
     $scope.setfc = function(cid) {
-        $scope.fcompany = cid
+        $scope.fcompany = cid;
     };
     $scope.statuses = function(list) {
         return _.uniq(_.pluck(list, 'status'));
@@ -86,7 +86,7 @@ function PeopleCtrl($scope) {
     $scope.$root.TITLE = 'People';
     $scope.fcompany = $scope.people.length ? $scope.people[0]['company-id'] : 0;
     $scope.setfc = function(cid) {
-        $scope.fcompany = cid
+        $scope.fcompany = cid;
     };
 }
 
@@ -105,14 +105,14 @@ function MeCtrl($scope) {
 function TodosCtrl($scope, Todos) {
     $scope.$root.TITLE = 'Todos';
     $scope.todos = Todos.query();
-    $scope.party = _.first(_.filter($scope.people, function(i){return i.id==$scope.$root.me.id}));
+    $scope.party = _.first(_.filter($scope.people, function(i) {return i.id == $scope.$root.me.id}));
     $scope.projectids = function(list) {
         return _.uniq(_.pluck(list, 'project-id'));
     };
     $scope.title = function(party) {
         var tt = 'To-dos';
         if (party) {
-            tt = party['first-name']+' '+party['last-name'] + "'s to-dos";
+            tt = party['first-name'] + ' ' + party['last-name'] + "'s to-dos";
         }
         if (party && party.id == $scope.$root.me.id) {
             tt = 'My to-dos';
@@ -128,7 +128,7 @@ function TodosCtrl($scope, Todos) {
             return 'My';
         }
         if (party) {
-            return party['first-name']+' '+party['last-name']+"'s";
+            return party['first-name'] + ' ' + party['last-name'] + "'s";
         }
         if (!party) {
             return 'Unassigned';
@@ -142,17 +142,17 @@ function TimeReportCtrl($scope, TimeReport) {
     $scope.timereport = TimeReport.query();
     $scope.filter = {};
     $scope.times = function(list, id) {
-        return _.reduce(_.map(_.where(list, {"project-id":id}),function(i){return i.hours;}),function(memo, num) { return memo + num; }, 0);
+        return _.reduce(_.map(_.where(list, {'project-id': id}), function(i) {return i.hours;}), function(memo, num) { return memo + num; }, 0);
     };
 }
 
 function NavCtrl($rootScope, $scope, $location) {
-    function updateNavBar(){
-        for(var i in $scope.navitems) {
-            $scope.navitems[i].class = $location.$$path.match('^/'+$scope.navitems[i].id) ? 'active' : '';
+    function updateNavBar() {
+        for (var i in $scope.navitems) {
+            $scope.navitems[i].class = $location.$$path.match('^/' + $scope.navitems[i].id) ? 'active' : '';
         }
-        for(var i in $scope.dropdownitems) {
-            $scope.dropdownitems[i].class = $location.$$path.match('^/'+$scope.dropdownitems[i].id) ? 'active' : '';
+        for (var i in $scope.dropdownitems) {
+            $scope.dropdownitems[i].class = $location.$$path.match('^/' + $scope.dropdownitems[i].id) ? 'active' : '';
         }
     }
     $rootScope.$on('$locationChangeSuccess', updateNavBar);

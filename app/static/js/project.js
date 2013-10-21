@@ -25,10 +25,6 @@ config(function($routeProvider) {
         controller: PeopleCtrl,
         templateUrl: '/static/templates/people.html'
     }).
-    when('/people_c:fcompany', {
-        controller: PeopleCtrl,
-        templateUrl: '/static/templates/people.html'
-    }).
     when('/people/:id', {
         controller: PersonCtrl,
         templateUrl: '/static/templates/person.html'
@@ -87,7 +83,10 @@ function CompanyCtrl($scope, $routeParams) {
 
 function PeopleCtrl($scope, $routeParams) {
     $scope.$root.TITLE = 'People';
-    $scope.fcompany = $routeParams.fcompany ? $routeParams.fcompany : $scope.people[0]['company-id']
+    $scope.fcompany = $scope.people.length ? $scope.people[0]['company-id'] : 0;
+    $scope.setfc = function(cid) {
+        $scope.fcompany = cid
+    };
 }
 
 function PersonCtrl($scope, $routeParams) {

@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.0-3e79c9b
+ * @license AngularJS v1.2.0-9a82873
  * (c) 2010-2012 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -158,7 +158,8 @@ function minErr(module) {
     -assertArg,
     -assertArgFn,
     -assertNotHasOwnProperty,
-    -getter
+    -getter,
+    -getBlockElements
 
 */
 
@@ -871,7 +872,8 @@ function shallowCopy(src, dst) {
  * Two objects or values are considered equivalent if at least one of the following is true:
  *
  * * Both objects or values pass `===` comparison.
- * * Both objects or values are of the same type and all of their properties pass `===` comparison.
+ * * Both objects or values are of the same type and all of their properties are equal by
+ *   comparing them with `angular.equals`.
  * * Both values are NaN. (In JavaScript, NaN == NaN => false. But we consider two NaN as equal)
  * * Both values represent the same regular expression (In JavasScript,
  *   /abc/ == /abc/ => false. But we consider two regular expressions as equal when their textual
@@ -1398,6 +1400,28 @@ function getter(obj, path, bindFnToScope) {
 }
 
 /**
+ * Return the siblings between `startNode` and `endNode`, inclusive
+ * @param {Object} object with `startNode` and `endNode` properties
+ * @returns jQlite object containing the elements
+ */
+function getBlockElements(block) {
+  if (block.startNode === block.endNode) {
+    return jqLite(block.startNode);
+  }
+
+  var element = block.startNode;
+  var elements = [element];
+
+  do {
+    element = element.nextSibling;
+    if (!element) break;
+    elements.push(element);
+  } while (element !== block.endNode);
+
+  return jqLite(elements);
+}
+
+/**
  * @ngdoc interface
  * @name angular.Module
  * @description
@@ -1780,7 +1804,7 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.0-3e79c9b',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.0-9a82873',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: "NG_VERSION_MINOR",
   dot: 0,
@@ -3113,7 +3137,7 @@ function annotate(fn) {
  *     providers and services.
  * * {@link AUTO.$provide#methods_value value(obj)} - registers a value/object that can only be accessed by
  *     services, not providers.
- * * {@link AUTO.$provide#factory factory(fn)} - registers a service **factory function**, `fn`,
+ * * {@link AUTO.$provide#methods_factory factory(fn)} - registers a service **factory function**, `fn`,
  *     that will be wrapped in a **service provider** object, whose `$get` property will contain the
  *     given factory function.
  * * {@link AUTO.$provide#methods_service service(class)} - registers a **constructor function**, `class` that
@@ -5720,9 +5744,10 @@ function $CompileProvider($provide) {
         }
 
         if (directiveValue = directive.transclude) {
-          // Special case ngRepeat so that we don't complain about duplicate transclusion, ngRepeat
-          // knows how to handle this on its own.
-          if (directiveName !== 'ngRepeat') {
+          // Special case ngIf and ngRepeat so that we don't complain about duplicate transclusion.
+          // This option should only be used by directives that know how to how to safely handle element transclusion,
+          // where the transcluded nodes are added or replaced after linking.
+          if (!directive.$$tlb) {
             assertNoDuplicate('transclusion', transcludeDirective, directive, $compileNode);
             transcludeDirective = directive;
           }
@@ -5738,9 +5763,13 @@ function $CompileProvider($provide) {
 
             childTranscludeFn = compile($template, transcludeFn, terminalPriority,
                                         replaceDirective && replaceDirective.name, {
-                                          controllerDirectives: controllerDirectives,
-                                          newIsolateScopeDirective: newIsolateScopeDirective,
-                                          templateDirective: templateDirective,
+                                          // Don't pass in:
+                                          // - controllerDirectives - otherwise we'll create duplicates controllers
+                                          // - newIsolateScopeDirective or templateDirective - combining templates with
+                                          //   element transclusion doesn't make sense.
+                                          //
+                                          // We need only transcludeDirective so that we prevent putting transclusion
+                                          // on the same element more than once.
                                           transcludeDirective: transcludeDirective
                                         });
           } else {
@@ -6264,33 +6293,37 @@ function $CompileProvider($provide) {
       }
 
       directives.push({
-        priority: -100,
-        compile: valueFn(function attrInterpolateLinkFn(scope, element, attr) {
-          var $$observers = (attr.$$observers || (attr.$$observers = {}));
+        priority: 100,
+        compile: function() {
+            return {
+              pre: function attrInterpolatePreLinkFn(scope, element, attr) {
+                var $$observers = (attr.$$observers || (attr.$$observers = {}));
 
-          if (EVENT_HANDLER_ATTR_REGEXP.test(name)) {
-            throw $compileMinErr('nodomevents',
-                "Interpolations for HTML DOM event attributes are disallowed.  Please use the " +
-                "ng- versions (such as ng-click instead of onclick) instead.");
+                if (EVENT_HANDLER_ATTR_REGEXP.test(name)) {
+                  throw $compileMinErr('nodomevents',
+                      "Interpolations for HTML DOM event attributes are disallowed.  Please use the " +
+                          "ng- versions (such as ng-click instead of onclick) instead.");
+                }
+
+                // we need to interpolate again, in case the attribute value has been updated
+                // (e.g. by another directive's compile function)
+                interpolateFn = $interpolate(attr[name], true, getTrustedContext(node, name));
+
+                // if attribute was updated so that there is no interpolation going on we don't want to
+                // register any observers
+                if (!interpolateFn) return;
+
+                // TODO(i): this should likely be attr.$set(name, iterpolateFn(scope) so that we reset the
+                // actual attr value
+                attr[name] = interpolateFn(scope);
+                ($$observers[name] || ($$observers[name] = [])).$$inter = true;
+                (attr.$$observers && attr.$$observers[name].$$scope || scope).
+                    $watch(interpolateFn, function interpolateFnWatchAction(value) {
+                      attr.$set(name, value);
+                    });
+              }
+            };
           }
-
-          // we need to interpolate again, in case the attribute value has been updated
-          // (e.g. by another directive's compile function)
-          interpolateFn = $interpolate(attr[name], true, getTrustedContext(node, name));
-
-          // if attribute was updated so that there is no interpolation going on we don't want to
-          // register any observers
-          if (!interpolateFn) return;
-
-          // TODO(i): this should likely be attr.$set(name, iterpolateFn(scope) so that we reset the
-          // actual attr value
-          attr[name] = interpolateFn(scope);
-          ($$observers[name] || ($$observers[name] = [])).$$inter = true;
-          (attr.$$observers && attr.$$observers[name].$$scope || scope).
-            $watch(interpolateFn, function interpolateFnWatchAction(value) {
-              attr.$set(name, value);
-            });
-        })
       });
     }
 
@@ -6371,7 +6404,7 @@ function directiveNormalize(name) {
  *
  * @description
  * A shared object between directive compile / linking functions which contains normalized DOM
- * element attributes. The the values reflect current binding state `{{ }}`. The normalization is
+ * element attributes. The values reflect current binding state `{{ }}`. The normalization is
  * needed since all of these are treated as equivalent in Angular:
  *
  *    <span ng:bind="a" ng-bind="a" data-ng-bind="a" x-ng-bind="a">
@@ -6986,6 +7019,7 @@ function $HttpProvider() {
      *       'response': function(response) {
      *          // same as above
      *       }
+     *     };
      *   });
      * </pre>
      *
@@ -8670,6 +8704,35 @@ function $LocationProvider(){
       return html5Mode;
     }
   };
+    
+  /**
+   * @ngdoc event
+   * @name ng.$location#$locationChangeStart
+   * @eventOf ng.$location
+   * @eventType broadcast on root scope
+   * @description
+   * Broadcasted before a URL will change. This change can be prevented by calling
+   * `preventDefault` method of the event. See {@link ng.$rootScope.Scope#$on} for more
+   * details about event object. Upon successful change
+   * {@link ng.$location#$locationChangeSuccess $locationChangeSuccess} is fired.
+   *
+   * @param {Object} angularEvent Synthetic event object.
+   * @param {string} newUrl New URL
+   * @param {string=} oldUrl URL that was before it was changed.
+   */
+    
+  /**
+   * @ngdoc event
+   * @name ng.$location#$locationChangeSuccess
+   * @eventOf ng.$location
+   * @eventType broadcast on root scope
+   * @description
+   * Broadcasted after a URL was changed. 
+   *
+   * @param {Object} angularEvent Synthetic event object.
+   * @param {string} newUrl New URL
+   * @param {string=} oldUrl URL that was before it was changed.
+   */
 
   this.$get = ['$rootScope', '$browser', '$sniffer', '$rootElement',
       function( $rootScope,   $browser,   $sniffer,   $rootElement) {
@@ -8941,18 +9004,23 @@ var promiseWarning;
 // ------------------------------
 // Angular expressions are generally considered safe because these expressions only have direct
 // access to $scope and locals. However, one can obtain the ability to execute arbitrary JS code by
-// obtaining a reference to native JS functions such as the Function constructor.
+// obtaining a reference to native JS functions such as the Function constructor, thw global Window
+// or Document object.  In addition, many powerful functions for use by JavaScript code are
+// published on scope that shouldn't be available from within an Angular expression.
 //
 // As an example, consider the following Angular expression:
 //
 //   {}.toString.constructor(alert("evil JS code"))
 //
 // We want to prevent this type of access. For the sake of performance, during the lexing phase we
-// disallow any "dotted" access to any member named "constructor".
+// disallow any "dotted" access to any member named "constructor" or to any member whose name begins
+// or ends with an underscore.  The latter allows one to exclude the private / JavaScript only API
+// available on the scope and controllers from the context of an Angular expression.
 //
-// For reflective calls (a[b]) we check that the value of the lookup is not the Function constructor
-// while evaluating the expression, which is a stronger but more expensive test. Since reflective
-// calls are expensive anyway, this is not such a big deal compared to static dereferencing.
+// For reflective calls (a[b]), we check that the value of the lookup is not the Function
+// constructor, Window or DOM node while evaluating the expression, which is a stronger but more
+// expensive test. Since reflective calls are expensive anyway, this is not such a big deal compared
+// to static dereferencing.
 //
 // This sandboxing technique is not perfect and doesn't aim to be. The goal is to prevent exploits
 // against the expression language, but not to prevent exploits that were enabled by exposing
@@ -8966,10 +9034,18 @@ var promiseWarning;
 // In general, it is not possible to access a Window object from an angular expression unless a
 // window or some DOM object that has a reference to window is published onto a Scope.
 
-function ensureSafeMemberName(name, fullExpression) {
-  if (name === "constructor") {
+function ensureSafeMemberName(name, fullExpression, allowConstructor) {
+  if (typeof name !== 'string' && toString.apply(name) !== "[object String]") {
+    return name;
+  }
+  if (name === "constructor" && !allowConstructor) {
     throw $parseMinErr('isecfld',
         'Referencing "constructor" field in Angular expressions is disallowed! Expression: {0}',
+        fullExpression);
+  }
+  if (name.charAt(0) === '_' || name.charAt(name.length-1) === '_') {
+    throw $parseMinErr('isecprv',
+        'Referencing private fields in Angular expressions is disallowed! Expression: {0}',
         fullExpression);
   }
   return name;
@@ -9655,7 +9731,10 @@ Parser.prototype = {
 
     return extend(function(self, locals) {
       var o = obj(self, locals),
-          i = indexFn(self, locals),
+          // In the getter, we will not block looking up "constructor" by name in order to support user defined
+          // constructors.  However, if value looked up is the Function constructor, we will still block it in the
+          // ensureSafeObject call right after we look up o[i] (a few lines below.)
+          i = ensureSafeMemberName(indexFn(self, locals), parser.text, true /* allowConstructor */),
           v, p;
 
       if (!o) return undefined;
@@ -9671,7 +9750,7 @@ Parser.prototype = {
       return v;
     }, {
       assign: function(self, value, locals) {
-        var key = indexFn(self, locals);
+        var key = ensureSafeMemberName(indexFn(self, locals), parser.text);
         // prevent overwriting of Function.constructor which would break ensureSafeObject check
         var safe = ensureSafeObject(obj(self, locals), parser.text);
         return safe[key] = value;
@@ -10307,8 +10386,6 @@ function $ParseProvider() {
  * - $q is integrated with the {@link ng.$rootScope.Scope} Scope model observation
  *   mechanism in angular, which means faster propagation of resolution or rejection into your
  *   models and avoiding unnecessary browser repaints, which would result in flickering UI.
- * - $q promises are recognized by the templating engine in angular, which means that in templates
- *   you can treat promises attached to a scope as if they were the resulting values.
  * - Q has many more features than $q, but that comes at a cost of bytes. $q is tiny, but contains
  *   all the important functionality needed for common async tasks.
  *
@@ -11392,7 +11469,8 @@ function $RootScopeProvider(){
        *
        *    - `string`: execute using the rules as defined in  {@link guide/expression expression}.
        *    - `function(scope)`: execute the function with the current `scope` parameter.
-       *
+       * 
+       * @param {(object)=} locals Local variables object, useful for overriding values in scope.
        * @returns {*} The result of evaluating the expression.
        */
       $eval: function(expr, locals) {
@@ -14876,7 +14954,7 @@ function FormController(element, attrs) {
  * does not allow nesting of form elements. It is useful to nest forms, for example if the validity of a
  * sub-group of controls needs to be determined.
  *
- * @param {string=} name|ngForm Name of the form. If specified, the form controller will be published into
+ * @param {string=} ngForm|name Name of the form. If specified, the form controller will be published into
  *                       related scope, under this name.
  *
  */
@@ -14935,7 +15013,7 @@ function FormController(element, attrs) {
  *
  * - If a form has only one input field then hitting enter in this field triggers form submit
  * (`ngSubmit`)
- * - if a form has has 2+ input fields and no buttons or input[type=submit] then hitting enter
+ * - if a form has 2+ input fields and no buttons or input[type=submit] then hitting enter
  * doesn't trigger submit
  * - if a form has one or more input fields and one or more buttons or input[type=submit] then
  * hitting enter in any of the input fields will trigger the click handler on the *first* button or
@@ -17306,13 +17384,17 @@ forEach(
   function(name) {
     var directiveName = directiveNormalize('ng-' + name);
     ngEventDirectives[directiveName] = ['$parse', function($parse) {
-      return function(scope, element, attr) {
-        var fn = $parse(attr[directiveName]);
-        element.on(lowercase(name), function(event) {
-          scope.$apply(function() {
-            fn(scope, {$event:event});
-          });
-        });
+      return {
+        compile: function($element, attr) {
+          var fn = $parse(attr[directiveName]);
+          return function(scope, element, attr) {
+            element.on(lowercase(name), function(event) {
+              scope.$apply(function() {
+                fn(scope, {$event:event});
+              });
+            });
+          };
+        }
       };
     }];
   }
@@ -17646,7 +17728,7 @@ forEach(
  * @priority 600
  * @param {expression} ngIf If the {@link guide/expression expression} is falsy then
  *     the element is removed from the DOM tree. If it is truthy a copy of the compiled
- *     eleent is added to the DOM tree.
+ *     element is added to the DOM tree.
  *
  * @example
   <example animations="true">
@@ -17689,22 +17771,24 @@ var ngIfDirective = ['$animate', function($animate) {
     priority: 600,
     terminal: true,
     restrict: 'A',
+    $$tlb: true,
     compile: function (element, attr, transclude) {
       return function ($scope, $element, $attr) {
-        var childElement, childScope;
+        var block = {}, childScope;
         $scope.$watch($attr.ngIf, function ngIfWatchAction(value) {
-          if (childElement) {
-            $animate.leave(childElement);
-            childElement = undefined;
+          if (block.startNode) {
+            $animate.leave(getBlockElements(block));
+            block = {};
           }
-          if (childScope) {
-            childScope.$destroy();
-            childScope = undefined;
+          if (block.startNode) {
+            getBlockElements(block).$destroy();
+            block = {};
           }
           if (toBoolean(value)) {
             childScope = $scope.$new();
             transclude(childScope, function (clone) {
-              childElement = clone;
+              block.startNode = clone[0];
+              block.endNode = clone[clone.length++] = document.createComment(' end ngIf: ' + $attr.ngIf + ' ');
               $animate.enter(clone, $element.parent(), $element);
             });
           }
@@ -18446,6 +18530,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
     transclude: 'element',
     priority: 1000,
     terminal: true,
+    $$tlb: true,
     compile: function(element, attr, linker) {
       return function($scope, $element, $attr){
         var expression = $attr.ngRepeat;
@@ -18625,23 +18710,6 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
       };
     }
   };
-
-  function getBlockElements(block) {
-    if (block.startNode === block.endNode) {
-      return jqLite(block.startNode);
-    }
-
-    var element = block.startNode;
-    var elements = [element];
-
-    do {
-      element = element.nextSibling;
-      if (!element) break;
-      elements.push(element);
-    } while (element !== block.endNode);
-
-    return jqLite(elements);
-  }
 }];
 
 /**
